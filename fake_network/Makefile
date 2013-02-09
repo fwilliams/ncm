@@ -14,6 +14,10 @@ install:
 	insmod $(MODNAME).ko
 uninstall:
 	rmmod $(MODNAME)
+test:build
+	make install
+	make uninstall
+	dmesg
 clean:
 	make -C $(KDIR) M=$$PWD clean
 
