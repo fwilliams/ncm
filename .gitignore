@@ -15,3 +15,8 @@
 *.exe
 *.out
 *.app
+
+**/modules.order
+**/Module.symvers
+**/.cproject
+**/.project
