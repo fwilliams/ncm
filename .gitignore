@@ -20,3 +20,9 @@
 **/Module.symvers
 **/.cproject
 **/.project
+**/.*.ko.cmd
+**/.*.mod.o.cmd
+**/.*.o.cmd
+**/.tmp_versions/
+**/*.ko
+**/*.mod.c
