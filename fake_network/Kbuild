@@ -1,0 +1,7 @@
+KBUILD_EXTRA_SYMBOLS := ../network_code_machine/Module.symvers
+ccflags-y := -I$(src)/include
+obj-m := hello-1.o
+
+#obj-m := hello-1.o other.o
+#other-y := other.o
+#hello-1-y := hello-1.o
