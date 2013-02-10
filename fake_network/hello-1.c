@@ -38,14 +38,62 @@ int init_module(void)
 {
   struct net_device* dev;
   struct sk_buff* data;
+  unsigned char src[ETH_ALEN] = {0x08,0x00,0x27,0xC0,0x56,0x5B};
+  unsigned char dest[ETH_ALEN] = {0x52,0x54,0x00,0x12,0x35,0x02};
+  unsigned char message[] = "hello there";
+  struct sk_buff * skb;
 
   printk(KERN_INFO "hi guise. I aM FAAAKE network driver of frEEEE candy van.");
   // dev = dev_get_by_index(&init_net, 0);
+  
   dev = dev_get_by_name(&init_net, "enp0s3");
 
- printk(KERN_INFO "using device: %s: addr 0x%04lx irq %d, MAC addr %pM, MTU:%u\n",
+  printk(KERN_INFO "using device: %s: addr 0x%04lx irq %d, MAC addr %pM, MTU:%u\n",
      dev->name, dev->base_addr, dev->irq, dev->dev_addr, dev->mtu);
 
+
+  printk(KERN_INFO "test: %i", dev->addr_len);
+  skb = alloc_skb(ETH_FRAME_LEN+sizeof(message)/sizeof(char),GFP_KERNEL);   
+  skb->dev = dev;
+
+  skb_reserve(skb,ETH_FRAME_LEN);
+  // skb_put(skb,ETH_FRAME_LEN);
+
+  skb_put(skb,sizeof(message)/sizeof(char));
+  memcpy(skb->data,message,sizeof(message)/sizeof(char));
+  // skb->data_len = sizeof(message)/sizeof(char);
+
+  printk(KERN_INFO "hard hader return: %i", dev_hard_header(skb, dev, ETH_P_802_3, dest, src, dev->addr_len));
+
+  if(dev_queue_xmit(skb)!=NET_XMIT_SUCCESS)
+  {
+      printk("Not send!!\n");
+  }
+
+  kfree_skb(skb);
+
+/*
+
+  printk(KERN_INFO "test: %i", dev->addr_len);
+  skb = alloc_skb(ETH_FRAME_LEN+sizeof(message)/sizeof(char),GFP_KERNEL);   
+  skb->dev = dev;
+
+  skb_reserve(skb,ETH_FRAME_LEN);
+  // skb_put(skb,ETH_FRAME_LEN);
+
+
+  skbdata = skb_put(skb, sizeof(message)/sizeof(char));
+  err = 0;
+  skb->csum = csum_and_copy_from_user(&message, skbdata,
+              sizeof(message)/sizeof(char), 0, &err);
+  if (err)
+    printk(KERN_INFO "broke while trying to add data");
+
+*/
+
+
+
+ // fill out ethernet header,skb->mac_header,skb->data, skb->dev
   // int dev_queue_xmit (struct sk_buff * skb);
 /*
   //dev->hard_start_xmit( //<- this is the real transmit
