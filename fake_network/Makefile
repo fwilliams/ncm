@@ -15,7 +15,9 @@ install:
 uninstall:
 	rmmod $(MODNAME)
 test:build
+	sync
 	make install
+	sync
 	make uninstall
 	dmesg
 clean:
