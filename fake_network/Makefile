@@ -4,7 +4,7 @@ include Kbuild
 else
 # /backwards compatibility
 
-MODNAME=hello-1
+MODNAME=hello
 KDIR ?= /usr/src/linux-3.6.11-rt
 
 all: build
@@ -15,6 +15,11 @@ install:
 uninstall:
 	rmmod $(MODNAME)
 test:build
+	sync
+	make install
+	sync
+	make uninstall
+testdmesg:build
 	sync
 	make install
 	sync
