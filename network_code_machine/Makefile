@@ -1,7 +1,8 @@
-
 kernel_dir := /usr/src/linux-3.6.11-rt
-module_name := hello_kernel
-obj-m := $(module_name).o
+
+module_name := netcode_module
+
+obj-m := interpreter.o $(module_name).o
 
 all:
 	make -C $(kernel_dir) M=$(PWD) modules
