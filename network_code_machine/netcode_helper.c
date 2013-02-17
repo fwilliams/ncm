@@ -10,9 +10,9 @@
 
 #include <linux/time.h>
 
+static struct timeval helper_timeval;
 
 unsigned long now_ms(void) {
-	struct timeval helper_timeval;
 	do_gettimeofday(&helper_timeval);
 	return helper_timeval.tv_sec * 1000 + helper_timeval.tv_usec;
 }

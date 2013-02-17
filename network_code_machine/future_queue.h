@@ -22,7 +22,7 @@
 /*
  * The maximum length of the future queue
  */
-#define MAX_FUTURES		3
+#define MAX_FUTURES		10
 
 /*
  * An element in the future queue
@@ -42,7 +42,6 @@ struct future_queue_t {
 	struct future_queue_el_t 	at[MAX_FUTURES];	/* The actual queue of futures */
 };
 
-
 /*
  * Initializes the future queue passed in
  */
@@ -57,6 +56,5 @@ int add_future(struct future_queue_t* queue, u32 jmp, u32 wait_ms);
  * Removes the first element in the queue
  */
 int get_future(struct future_queue_t* queue, struct future_queue_el_t* out_el);
-
 
 #endif /* FUTURE_QUEUE_H_ */

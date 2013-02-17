@@ -19,8 +19,12 @@ struct instr_t program[PROGRAM_LEN];
 struct future_queue_t queue;
 
 int init_module() {
+	int i;
+	struct future_queue_el_t el;
+
 	printk( KERN_ALERT "NCM started at time %lu\n", now_ms() );
 
+	/*
 	program[0].type = NOP;
 	program[1].type = FUTURE;
 	program[1].args[0] = 1000;
@@ -28,12 +32,26 @@ int init_module() {
 	program[3].type = END_OF_PROGRAM;
 
 	start_interpreter(&ncm_interp, program, PROGRAM_LEN);
+	*/
+
+	init_future_queue(&queue);
+
+	for(i=0; i<MAX_FUTURES; i++) {
+		add_future(&queue, 10, 1000/(i+1));
+	}
+
+	for(i=0; i<MAX_FUTURES; i++) {
+		get_future(&queue, &el);
+		printk("%llu\n", el.expiry);
+	}
 
 	return 0;
 }
 
 void cleanup_module(void) {
+	/*
 	stop_interpreter(&ncm_interp);
+	*/
 
 	printk( KERN_ALERT "NCM ended at time %lu\n", now_ms() );
 }
