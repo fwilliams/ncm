@@ -22,6 +22,8 @@ int handle_future(struct interpreter_t* interpreter) {
 	printk("FUTURE instruction reached at PC = %d with argument %d\n",
 			interpreter->program_counter,
 			interpreter->program[interpreter->program_counter].args[0]);
+
+
 	return INSTR_OK;
 }
 

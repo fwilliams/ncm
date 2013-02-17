@@ -1,10 +1,11 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
-#include <linux/time.h>
 #include <linux/types.h>
 #include <linux/timer.h>
 
+#include "netcode_helper.h"
 #include "interpreter.h"
+#include "future_queue.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Francis Williams, 2013");
@@ -12,13 +13,13 @@ MODULE_DESCRIPTION("Network Code interpreter module");
 
 #define PROGRAM_LEN 4
 
-struct timeval t;
 struct interpreter_t ncm_interp;
 struct instr_t program[PROGRAM_LEN];
 
+struct future_queue_t queue;
+
 int init_module() {
-	do_gettimeofday(&t);
-	printk( KERN_ALERT "NCM started at time %lu\n", t.tv_sec * 1000 + t.tv_usec );
+	printk( KERN_ALERT "NCM started at time %lu\n", now_ms() );
 
 	program[0].type = NOP;
 	program[1].type = FUTURE;
@@ -34,6 +35,5 @@ int init_module() {
 void cleanup_module(void) {
 	stop_interpreter(&ncm_interp);
 
-	do_gettimeofday(&t);
-	printk(KERN_ALERT "NCM ended at time %lu\n", t.tv_sec * 1000 + t.tv_usec);
+	printk( KERN_ALERT "NCM ended at time %lu\n", now_ms() );
 }

@@ -1,15 +1,15 @@
 /*
- * interp.h
- *
+ * interpreter.h
+ * The Network Code interpreter
  *  Created on: 2013-02-16
- *      Author: francis
+ *      Author: Francis Williams
  */
 
 #include <linux/types.h>
 #include <linux/kthread.h>
 
-#ifndef INTERP_H_
-#define INTERP_H_
+#ifndef INTERPRETER_H_
+#define INTERPRETER_H_
 
 /*
  * The bytecodes representing the various netcode instructions
@@ -44,7 +44,8 @@
 #define INSTR_OK		0
 #define INSTR_ERROR		1
 
-/**
+
+/*
  * A single Network Code instruction
  */
 struct instr_t {
@@ -56,8 +57,8 @@ struct instr_t {
  * The current state of a network code interpreter
  */
 struct interpreter_t {
-	u8 					program_counter;	/* Index to the current instruction */
-	u8 					program_length;		/* The number of instructions in the program */
+	u32					program_counter;	/* Index to the current instruction */
+	u32					program_length;		/* The number of instructions in the program */
 	struct instr_t* 	program;			/* Pointer to the netcode program */
 	struct task_struct*	thread;				/* Handle to the interpreters thread */
 };
@@ -75,4 +76,4 @@ int start_interpreter(struct interpreter_t* interpreter, struct instr_t* prog, u
 int stop_interpreter(struct interpreter_t* interpreter);
 
 
-#endif /* INTERP_H_ */
+#endif /* INTERPRETER_H_ */
