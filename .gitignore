@@ -1,3 +1,7 @@
+# Eclipse Project Files
+*.cproject
+*.project
+
 # Object files
 *.o
 
