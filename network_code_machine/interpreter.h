@@ -8,6 +8,8 @@
 #include <linux/types.h>
 #include <linux/kthread.h>
 
+#include "future_queue.h"
+
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
 
@@ -57,10 +59,11 @@ struct instr_t {
  * The current state of a network code interpreter
  */
 struct interpreter_t {
-	u32					program_counter;	/* Index to the current instruction */
-	u32					program_length;		/* The number of instructions in the program */
-	struct instr_t* 	program;			/* Pointer to the netcode program */
-	struct task_struct*	thread;				/* Handle to the interpreters thread */
+	u32						program_counter;	/* Index to the current instruction */
+	u32						program_length;		/* The number of instructions in the program */
+	struct instr_t* 		program;			/* Pointer to the netcode program */
+	struct task_struct*		thread;				/* Handle to the interpreters thread */
+	struct future_queue_t	future_queue;		/* The future queue */
 };
 
 /*

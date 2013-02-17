@@ -83,6 +83,7 @@ int start_interpreter(struct interpreter_t* interpreter, struct instr_t* prog, u
 	interpreter->program_counter = 0;
 	interpreter->program_length = prog_len;
 	interpreter->program = prog;
+	init_future_queue(&interpreter->future_queue);
 	interpreter->thread = kthread_run(interpreter_threadfn, (void*) interpreter, "NCM interpreter");
 	return 0;
 }

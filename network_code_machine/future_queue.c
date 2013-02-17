@@ -49,7 +49,7 @@ int add_future(struct future_queue_t* queue, u32 jmp, u32 wait_ms) {
 	index = (queue->first + queue->length) % MAX_FUTURES;
 	queue->at[index].jmp_address = jmp;
 	queue->at[index].wait_time = wait_ms;
-	queue->at[index].expiry =  wait_ms;
+	queue->at[index].expiry = now_ms() + wait_ms;
 	queue->length++;
 
 	sort_future_queue(queue);
