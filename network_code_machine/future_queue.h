@@ -28,9 +28,9 @@
  * An element in the future queue
  */
 struct future_queue_el_t {
-	u32 jmp_address;	/* The address that the interpreter will jump to when the future occurs */
-	u32 wait_time;		/* The requested wait time for this future in milliseconds */
-	u64 expiry;			/* The exact timestamp when this future should occur */
+	u32	jmp_address;	/* The address that the interpreter will jump to when the future occurs */
+	u32	wait_time;		/* The requested wait time for this future in milliseconds */
+	u64	expiry;			/* The exact timestamp when this future should occur */
 };
 
 /*
