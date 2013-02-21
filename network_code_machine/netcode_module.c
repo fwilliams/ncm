@@ -1,7 +1,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/types.h>
-#include <linux/timer.h>
 
 #include "netcode_helper.h"
 #include "interpreter.h"

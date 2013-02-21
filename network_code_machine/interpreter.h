@@ -7,6 +7,7 @@
 
 #include <linux/types.h>
 #include <linux/kthread.h>
+#include <linux/hrtimer.h>
 
 #include "future_queue.h"
 
@@ -64,6 +65,7 @@ struct interpreter_t {
 	struct instr_t* 		program;			/* Pointer to the netcode program */
 	struct task_struct*		thread;				/* Handle to the interpreters thread */
 	struct future_queue_t	future_queue;		/* The future queue */
+	struct hrtimer			timer;				/* High res timer used to schedule futures */
 };
 
 /*

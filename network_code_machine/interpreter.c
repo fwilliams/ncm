@@ -23,7 +23,14 @@ int handle_future(struct interpreter_t* interpreter) {
 			interpreter->program_counter,
 			interpreter->program[interpreter->program_counter].args[0]);
 
-
+	/*
+	 * Insert element into the future queue
+	 * 2 Cases:
+	 * (i)	The future queue is not empty
+	 * 			- Return
+	 * (ii)	The future queue is empty
+	 * 			- Start interpreter's timer
+	 */
 	return INSTR_OK;
 }
 
@@ -84,6 +91,7 @@ int start_interpreter(struct interpreter_t* interpreter, struct instr_t* prog, u
 	interpreter->program_length = prog_len;
 	interpreter->program = prog;
 	init_future_queue(&interpreter->future_queue);
+	hrtimer_init(&interpreter->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	interpreter->thread = kthread_run(interpreter_threadfn, (void*) interpreter, "NCM interpreter");
 	return 0;
 }
