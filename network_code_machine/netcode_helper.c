@@ -12,7 +12,10 @@
 
 static struct timeval helper_timeval;
 
-unsigned long now_ms(void) {
+/*
+ * Gets the current timestamp in microseconds
+ */
+u64 now_us(void) {
 	do_gettimeofday(&helper_timeval);
-	return helper_timeval.tv_sec * 1000 + helper_timeval.tv_usec;
+	return helper_timeval.tv_sec * USEC_PER_SEC + helper_timeval.tv_usec;
 }

@@ -4,25 +4,38 @@
 
 #include "netcode_helper.h"
 #include "interpreter.h"
-#include "future_queue.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Francis Williams, 2013");
 MODULE_DESCRIPTION("Network Code interpreter module");
 
-#define PROGRAM_LEN 4
+#define PROGRAM_LEN 9
 
-struct interpreter_t ncm_interp;
-struct instr_t program[PROGRAM_LEN];
+struct interpreter ncm_interp;
+struct netcode_instr program[PROGRAM_LEN];
 
 int init_module() {
-	printk( KERN_ALERT "NCM started at time %lu\n", now_ms() );
+	printk( KERN_ALERT "NCM started at time %llu\n", now_us() );
 
 	program[0].type = NOP;
 	program[1].type = FUTURE;
-	program[1].args[0] = 1000;
-	program[2].type = HALT;
-	program[3].type = END_OF_PROGRAM;
+	program[1].args[0] = 1000000;
+	program[1].args[1] = 6;
+
+	program[2].type = FUTURE;
+	program[2].args[0] = 10000000;
+	program[2].args[1] = 6;
+
+	program[3].type = FUTURE;
+	program[3].args[0] = 100000000;
+	program[3].args[1] = 5;
+
+	program[4].type = HALT;
+	program[5].type = END_OF_PROGRAM;
+
+	program[6].type = NOP;
+	program[7].type = NOP;
+	program[8].type = HALT;
 
 	start_interpreter(&ncm_interp, program, PROGRAM_LEN);
 
@@ -32,5 +45,5 @@ int init_module() {
 void cleanup_module(void) {
 	stop_interpreter(&ncm_interp);
 
-	printk( KERN_ALERT "NCM ended at time %lu\n", now_ms() );
+	printk( KERN_ALERT "NCM ended at time %llu\n", now_us() );
 }

@@ -7,7 +7,7 @@
 
 #include <linux/types.h>
 #include <linux/kthread.h>
-#include <linux/hrtimer.h>
+#include <linux/delay.h>
 
 #include "future_queue.h"
 
@@ -51,7 +51,7 @@
 /*
  * A single Network Code instruction
  */
-struct instr_t {
+struct netcode_instr {
 	u8 	type;		/* The instruction type */
 	u32 args[3];	/* The instruction args. Note some may be unused */
 };
@@ -59,13 +59,13 @@ struct instr_t {
 /*
  * The current state of a network code interpreter
  */
-struct interpreter_t {
+struct interpreter {
 	u32						program_counter;	/* Index to the current instruction */
 	u32						program_length;		/* The number of instructions in the program */
-	struct instr_t* 		program;			/* Pointer to the netcode program */
+	struct netcode_instr* 	program;			/* Pointer to the netcode program */
 	struct task_struct*		thread;				/* Handle to the interpreters thread */
-	struct future_queue_t	future_queue;		/* The future queue */
-	struct hrtimer			timer;				/* High res timer used to schedule futures */
+	struct future_queue		future_queue;		/* The future queue */
+	struct mutex			interpreter_mutex;	/* Mutex that locks the interpreter during instruction execution */
 };
 
 /*
@@ -73,12 +73,12 @@ struct interpreter_t {
  * This will create and start a thread to run the interpreter in
  * and set the program counter to 0.
  */
-int start_interpreter(struct interpreter_t* interpreter, struct instr_t* prog, u8 prog_len);
+int start_interpreter(struct interpreter* interpreter, struct netcode_instr* prog, u8 prog_len);
 
 /*
  * Stops the interpreter thread and cleans up the interpreter
  */
-int stop_interpreter(struct interpreter_t* interpreter);
+int stop_interpreter(struct interpreter* interpreter);
 
 
 #endif /* INTERPRETER_H_ */

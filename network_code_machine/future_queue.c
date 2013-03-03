@@ -7,11 +7,13 @@
 
 #include "future_queue.h"
 #include <linux/kernel.h>
+#include <linux/time.h>
+
 
 /*
  * Initializes the future queue passed in
  */
-void init_future_queue(struct future_queue_t* queue) {
+void init_future_queue(struct future_queue* queue) {
 	queue->first = 0;
 	queue->length = 0;
 }
@@ -19,9 +21,9 @@ void init_future_queue(struct future_queue_t* queue) {
 /*
  * Sorts the future queue by expiry time so that the earliest time is first
  */
-void sort_future_queue(struct future_queue_t* queue) {
+void sort_future_queue(struct future_queue* queue) {
 	int i, j, jx, jxp;
-	struct future_queue_el_t tmp;
+	struct future_queue_el tmp;
 
 	for(i = 0; i < (queue->length - 1); i++) {
 		for(j = 0; j < (queue->length - i - 1); j++) {
@@ -37,9 +39,16 @@ void sort_future_queue(struct future_queue_t* queue) {
 }
 
 /*
+ * Checks if there are no elements in the queue
+ */
+bool is_empty(struct future_queue* queue) {
+	return (bool) (queue->length == 0);
+}
+
+/*
  * Add a new future to the queue
  */
-int add_future(struct future_queue_t* queue, u32 jmp, u32 wait_ms) {
+int push_future(struct future_queue* queue, u32 jmp, u64 wait_us) {
 	int index;
 
 	if(queue->length == MAX_FUTURES) {
@@ -48,8 +57,8 @@ int add_future(struct future_queue_t* queue, u32 jmp, u32 wait_ms) {
 
 	index = (queue->first + queue->length) % MAX_FUTURES;
 	queue->at[index].jmp_address = jmp;
-	queue->at[index].wait_time = wait_ms;
-	queue->at[index].expiry = now_ms() + wait_ms;
+	queue->at[index].wait_time = wait_us;
+	queue->at[index].expiry = now_us() + wait_us;
 	queue->length++;
 
 	sort_future_queue(queue);
@@ -60,7 +69,7 @@ int add_future(struct future_queue_t* queue, u32 jmp, u32 wait_ms) {
 /*
  * Removes the first element in the queue
  */
-int get_future(struct future_queue_t* queue, struct future_queue_el_t* out_el) {
+int pop_future(struct future_queue* queue, struct future_queue_el* out_el) {
 	if(queue->length == 0) {
 		return FUTURE_Q_EMPTY;
 	}
@@ -72,4 +81,10 @@ int get_future(struct future_queue_t* queue, struct future_queue_el_t* out_el) {
 	return FUTURE_Q_OK;
 }
 
+/*
+ * Get's a pointer to the first element in the future queue
+ */
+struct future_queue_el* peek_future(struct future_queue* queue) {
+	return &queue->at[queue->first];
+}
 
