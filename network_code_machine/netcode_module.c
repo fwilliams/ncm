@@ -26,11 +26,12 @@ int init_module() {
 	program[2].args[0] = 10000000;
 	program[2].args[1] = 6;
 
-	program[3].type = FUTURE;
+	program[3].type = WAIT;
 	program[3].args[0] = 100000000;
 	program[3].args[1] = 5;
 
-	program[4].type = HALT;
+	program[4].type = NOP;
+
 	program[5].type = GOTO;
 	program[5].args[0] = 9;
 

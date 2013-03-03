@@ -77,6 +77,17 @@ enum instr_result handle_halt(struct interpreter* interpreter) {
 	return INSTR_CHANGE_PC;
 }
 
+enum instr_result handle_wait(struct interpreter* interpreter) {
+	enum instr_result res;
+	res = handle_future(interpreter);
+
+	if(res != INSTR_OK) {
+		return res;
+	}
+
+	return handle_halt(interpreter);
+}
+
 enum instr_result handle_goto(struct interpreter* interpreter) {
 	u32 jmp = interpreter->program[interpreter->program_counter].args[0];
 
@@ -126,6 +137,9 @@ int interpreter_threadfn(void* data) {
 			break;
 		case HALT:
 			instr_res = handle_halt(interpreter);
+			break;
+		case WAIT:
+			instr_res = handle_wait(interpreter);
 			break;
 		case END_OF_PROGRAM:
 			instr_res = handle_end_of_program(interpreter);
