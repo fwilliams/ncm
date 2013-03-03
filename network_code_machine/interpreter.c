@@ -8,17 +8,27 @@
 
 #include "interpreter.h"
 
+/*
+ * Statuses that can be returned by instruction
+ */
+enum instr_result {
+	INSTR_OK,
+	INSTR_ERROR,
+	INSTR_CHANGE_PC
+};
+
+
 /*****************************************************************************
  * Interpreter instruction handlers
  * These functions map 1:1 with Network code instructions
  *****************************************************************************/
 
-int handle_nop(struct interpreter* interpreter) {
+enum instr_result handle_nop(struct interpreter* interpreter) {
 	printk("NOP instruction reached at PC = %d\n", interpreter->program_counter);
 	return INSTR_OK;
 }
 
-int handle_future(struct interpreter* interpreter) {
+enum instr_result handle_future(struct interpreter* interpreter) {
 	u32 delay = interpreter->program[interpreter->program_counter].args[0];
 	u32 jmp = interpreter->program[interpreter->program_counter].args[1];
 	int error;
@@ -41,7 +51,7 @@ int handle_future(struct interpreter* interpreter) {
 	return INSTR_OK;
 }
 
-int handle_halt(struct interpreter* interpreter) {
+enum instr_result handle_halt(struct interpreter* interpreter) {
 	struct future_queue_el head;
 	int error;
 	u64 range;
@@ -64,10 +74,10 @@ int handle_halt(struct interpreter* interpreter) {
 
 	interpreter->program_counter = head.jmp_address;
 
-	return INSTR_OK;
+	return INSTR_CHANGE_PC;
 }
 
-int handle_goto(struct interpreter* interpreter) {
+enum instr_result handle_goto(struct interpreter* interpreter) {
 	u32 jmp = interpreter->program[interpreter->program_counter].args[0];
 
 	printk("GOTO instruction reached at PC = %d with arg %d\n",
@@ -79,10 +89,10 @@ int handle_goto(struct interpreter* interpreter) {
 
 	interpreter->program_counter = jmp;
 
-	return INSTR_OK;
+	return INSTR_CHANGE_PC;
 }
 
-int handle_end_of_program(struct interpreter* interpreter) {
+enum instr_result handle_end_of_program(struct interpreter* interpreter) {
 	printk("END_OF_PROGRAM instruction reached at PC = %d\n",
 			interpreter->program_counter);
 	return INSTR_OK;
@@ -97,31 +107,43 @@ int handle_end_of_program(struct interpreter* interpreter) {
  */
 int interpreter_threadfn(void* data) {
 	struct interpreter* interpreter = (struct interpreter*) data;
+	enum instr_result instr_res;
 
 	printk("The interpreter is running! \n");
 	printk("The program has %d instructions\n", interpreter->program_length);
 
 	while(!kthread_should_stop()) {
+		/* Handle the next instruction */
 		switch( interpreter->program[interpreter->program_counter].type ) {
 		case NOP:
-			handle_nop(interpreter);
+			instr_res = handle_nop(interpreter);
 			break;
 		case GOTO:
-			handle_goto(interpreter);
-			continue;
+			instr_res = handle_goto(interpreter);
+			break;
 		case FUTURE:
-			handle_future(interpreter);
+			instr_res = handle_future(interpreter);
 			break;
 		case HALT:
-			handle_halt(interpreter);
-			continue;
+			instr_res = handle_halt(interpreter);
+			break;
 		case END_OF_PROGRAM:
-			handle_end_of_program(interpreter);
+			instr_res = handle_end_of_program(interpreter);
 			return PROGRAM_OK;
 		default:
 			return INVALID_INSTR;
 		}
-		++interpreter->program_counter;
+
+		/* Handle the result of the instrution that just executed */
+		switch(instr_res) {
+		case INSTR_OK:
+			++interpreter->program_counter;
+			break;
+		case INSTR_ERROR:
+			return PROGRAM_ERROR;
+		case INSTR_CHANGE_PC:
+			continue;
+		}
 	}
 	return PROGRAM_OK;
 }

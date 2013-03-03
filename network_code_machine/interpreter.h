@@ -42,13 +42,6 @@
 #define INVALID_INSTR	2
 
 /*
- * Instruction error codes
- */
-#define INSTR_OK		0
-#define INSTR_ERROR		1
-
-
-/*
  * A single Network Code instruction
  */
 struct netcode_instr {
