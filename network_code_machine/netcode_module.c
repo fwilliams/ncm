@@ -9,7 +9,7 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Francis Williams, 2013");
 MODULE_DESCRIPTION("Network Code interpreter module");
 
-#define PROGRAM_LEN 9
+#define PROGRAM_LEN 10
 
 struct interpreter ncm_interp;
 struct netcode_instr program[PROGRAM_LEN];
@@ -31,11 +31,14 @@ int init_module() {
 	program[3].args[1] = 5;
 
 	program[4].type = HALT;
-	program[5].type = END_OF_PROGRAM;
+	program[5].type = GOTO;
+	program[5].args[0] = 9;
 
 	program[6].type = NOP;
 	program[7].type = NOP;
 	program[8].type = HALT;
+
+	program[9].type = END_OF_PROGRAM;
 
 	start_interpreter(&ncm_interp, program, PROGRAM_LEN);
 

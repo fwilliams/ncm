@@ -70,6 +70,9 @@ int handle_halt(struct interpreter* interpreter) {
 int handle_goto(struct interpreter* interpreter) {
 	u32 jmp = interpreter->program[interpreter->program_counter].args[0];
 
+	printk("GOTO instruction reached at PC = %d with arg %d\n",
+			interpreter->program_counter, jmp);
+
 	if(jmp >= interpreter->program_length) {
 		return INSTR_ERROR;
 	}
