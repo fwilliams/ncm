@@ -67,6 +67,18 @@ int handle_halt(struct interpreter* interpreter) {
 	return INSTR_OK;
 }
 
+int handle_goto(struct interpreter* interpreter) {
+	u32 jmp = interpreter->program[interpreter->program_counter].args[0];
+
+	if(jmp >= interpreter->program_length) {
+		return INSTR_ERROR;
+	}
+
+	interpreter->program_counter = jmp;
+
+	return INSTR_OK;
+}
+
 int handle_end_of_program(struct interpreter* interpreter) {
 	printk("END_OF_PROGRAM instruction reached at PC = %d\n",
 			interpreter->program_counter);
@@ -91,6 +103,9 @@ int interpreter_threadfn(void* data) {
 		case NOP:
 			handle_nop(interpreter);
 			break;
+		case GOTO:
+			handle_goto(interpreter);
+			continue;
 		case FUTURE:
 			handle_future(interpreter);
 			break;
