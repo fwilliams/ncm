@@ -77,7 +77,6 @@ int handle_end_of_program(struct interpreter* interpreter) {
  * End interpreter instruction handlers
  *****************************************************************************/
 
-
 /*
  * The interpreter main thread function
  */
@@ -87,7 +86,7 @@ int interpreter_threadfn(void* data) {
 	printk("The interpreter is running! \n");
 	printk("The program has %d instructions\n", interpreter->program_length);
 
-	while(1) {
+	while(!kthread_should_stop()) {
 		switch( interpreter->program[interpreter->program_counter].type ) {
 		case NOP:
 			handle_nop(interpreter);

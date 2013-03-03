@@ -65,7 +65,6 @@ struct interpreter {
 	struct netcode_instr* 	program;			/* Pointer to the netcode program */
 	struct task_struct*		thread;				/* Handle to the interpreters thread */
 	struct future_queue		future_queue;		/* The future queue */
-	struct mutex			interpreter_mutex;	/* Mutex that locks the interpreter during instruction execution */
 };
 
 /*
