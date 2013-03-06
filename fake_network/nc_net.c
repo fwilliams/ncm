@@ -156,18 +156,29 @@ int nc_channel_receive(struct nc_channel *chan, u64 *msg) {
 void run_tests(void){
   struct nc_channel chan;
   u64 msg = 123;
+  u64 msg_rx = 123;
   u64 msg2 = 321;
+  u64 msg3 = 333;
 
   init_nc_channel(&chan);
-  printk(KERN_INFO "before send: %llu", msg);
+
+  printk(KERN_INFO "sending: %llu", msg);
   nc_channel_send(&chan, &msg);
-  printk(KERN_INFO "after send: %llu", msg);
-  nc_channel_receive(&chan, &msg2);
-  printk(KERN_INFO "after receive: %llu", msg2);
+  printk(KERN_INFO "sending: %llu", msg2);
+  nc_channel_send(&chan, &msg2);
+  printk(KERN_INFO "sending: %llu", msg3);
+  nc_channel_send(&chan, &msg3);
+
+  nc_channel_receive(&chan, &msg_rx);
+  printk(KERN_INFO "receiving: %llu", msg_rx);
+  nc_channel_receive(&chan, &msg_rx);
+  printk(KERN_INFO "receiving: %llu", msg_rx);
+  nc_channel_receive(&chan, &msg_rx);
+  printk(KERN_INFO "receiving: %llu", msg_rx);
 }
 
-int init_module(void)
-{
+void network_test(void){
+
   struct net_device* dev;
   // struct sk_buff* data;
   unsigned char src[ETH_ALEN] = {0x08,0x00,0x27,0xC0,0x56,0x5B};
@@ -198,14 +209,19 @@ int init_module(void)
 
   printk(KERN_INFO "hard header return: %i", dev_hard_header(skb, dev, ETH_P_802_3, dest, src, skb->len));
 
-  // if(dev_queue_xmit(skb)!=NET_XMIT_SUCCESS)
-  // {
-  //     printk("Not send!!\n");
-  // }
+  if(dev_queue_xmit(skb)!=NET_XMIT_SUCCESS)
+  {
+      printk("Not sent!!\n");
+  }
 
   kfree_skb(skb);
   dev_put(dev);
 
+}
+
+int init_module(void)
+{
+  // run_tests();
 /*
 
   printk(KERN_INFO "test: %i", dev->addr_len);
@@ -267,7 +283,7 @@ int init_module(void)
   // struct net_device *dev_get_by_index(struct net *net, int ifindex)
   // struct net* nnet;
 
-  printk(KERN_INFO "Hello world 2.\n");
+  printk(KERN_INFO "Hello world.\n");
 
   // int dev_queue_xmit (struct sk_buff * skb);
   // e1000_xmit_frame((struct sk_buff *)NULL, (struct net_device *)NULL);
