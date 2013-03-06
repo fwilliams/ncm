@@ -4,7 +4,7 @@ include Kbuild
 else
 # /backwards compatibility
 
-MODNAME=hello
+MODNAME=nc_net
 KDIR ?= /usr/src/linux-3.6.11-rt
 
 all: build

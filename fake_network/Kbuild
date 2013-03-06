@@ -1,7 +1,7 @@
 KBUILD_EXTRA_SYMBOLS := ../network_code_machine/Module.symvers
 ccflags-y := -I$(src)/include
-obj-m := hello.o
-hello-y := hello-1.o
+obj-m := nc_net.o
+#nc_net-y := nc_net-1.o
 
 #obj-m := hello-1.o other.o
 #other-y := other.o
