@@ -180,7 +180,7 @@ void run_tests(void){
 void network_test(void){
 
   struct net_device* dev;
-  // struct sk_buff* data;
+  unsigned char* data;
   unsigned char src[ETH_ALEN] = {0x08,0x00,0x27,0xC0,0x56,0x5B};
   unsigned char dest[ETH_ALEN] = {0x52,0x54,0x00,0x12,0x35,0x02};
   unsigned char message[] = "hello there";
@@ -190,29 +190,51 @@ void network_test(void){
   printk(KERN_INFO "hi guise. I aM FAAAKE network driver of frEEEE candy van.");
   // dev = dev_get_by_index(&init_net, 0);
   
+
+  skb = alloc_skb(ETH_FRAME_LEN+sizeof(message)/sizeof(char), GFP_KERNEL);
+  printk(KERN_INFO "data length: %i, skb->len: %i", skb->data - skb->tail, skb->len); 
+
+  skb_reserve(skb,ETH_FRAME_LEN);
+  printk(KERN_INFO "data length: %i, skb->len: %i", skb->data - skb->tail, skb->len);
+  // skb_put(skb,ETH_FRAME_LEN);
+
+  data = skb_put(skb,sizeof(message)/sizeof(char));
+  printk(KERN_INFO "data length: %i, skb->len: %i", skb->data - skb->tail, skb->len);
+  // int err = 0;
+  // skb->csum = csum_and_copy_from_user(&message, data,
+  //             sizeof(message)/sizeof(char), 0, &err);
+  // if(err){
+  //   printk(KERN_INFO "err: %i", err);
+  // }
+  memcpy(skb->data,message,sizeof(message)/sizeof(char));
+  printk(KERN_INFO "skb->data: %s", skb->data);
+  // skb->data_len += sizeof(message)/sizeof(char);
+  // skb->len += sizeof(message)/sizeof(char);
+
+  // we don't care about network namespaces, so we use init_net
   dev = dev_get_by_name(&init_net, "enp0s3");
+  // dev = dev_get_by_index(&init_net, 0);
+
+  if(dev == 0){
+    printk(KERN_INFO "Failed to find network device");
+    return;
+  }
+  printk(KERN_INFO "device %i:", dev);
 
   printk(KERN_INFO "using device: %s: addr 0x%04lx irq %d, MAC addr %pM, MTU:%u\n",
      dev->name, dev->base_addr, dev->irq, dev->dev_addr, dev->mtu);
 
-
-  printk(KERN_INFO "test: %i", dev->addr_len);
-  skb = alloc_skb(ETH_FRAME_LEN+sizeof(message)/sizeof(char),GFP_KERNEL);   
   skb->dev = dev;
-
-  skb_reserve(skb,ETH_FRAME_LEN);
-  // skb_put(skb,ETH_FRAME_LEN);
-
-  skb_put(skb,sizeof(message)/sizeof(char));
-  memcpy(skb->data,message,sizeof(message)/sizeof(char));
-  // skb->data_len = sizeof(message)/sizeof(char);
-
+  skb->priority = 0;
+  
   printk(KERN_INFO "hard header return: %i", dev_hard_header(skb, dev, ETH_P_802_3, dest, src, skb->len));
+  printk(KERN_INFO "data length: %i, skb->len: %i", skb->data - skb->tail, skb->len);
 
-  if(dev_queue_xmit(skb)!=NET_XMIT_SUCCESS)
-  {
-      printk("Not sent!!\n");
-  }
+  dev_queue_xmit(skb);
+  // if(dev_queue_xmit(skb)!=NET_XMIT_SUCCESS)
+  // {
+  //     printk("Not sent!!\n");
+  // }
 
   kfree_skb(skb);
   dev_put(dev);
@@ -221,7 +243,7 @@ void network_test(void){
 
 int init_module(void)
 {
-  // run_tests();
+  network_test();
 /*
 
   printk(KERN_INFO "test: %i", dev->addr_len);
