@@ -50,6 +50,9 @@ struct variable_space {
 	u32				count;					/* The current number of variables allocated */
 };
 
+/* Initializes a new variable_space */
+int init_variable_space(struct variable_space* varspace);
+
 /* Create a new variable with the given data. This function returns the variable ID. */
 u32 create_variable(struct variable_space* varspace);
 
