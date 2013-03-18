@@ -10,7 +10,6 @@
 #include <linux/delay.h>
 
 #include "future_queue.h"
-#include "variable_space.h"
 
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_

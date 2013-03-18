@@ -17,4 +17,4 @@ uninstall:
 update:
 	make uninstall clean all install
 delete:
-	make clean uninstall	
+	make clean uninstall
