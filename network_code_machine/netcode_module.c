@@ -19,6 +19,8 @@ static int chrdev_major;
 
 static ssize_t varspace_chrdev_write(struct file *filp, const char __user *buff, size_t len, loff_t *off) {
 	char kbuf[len+1];
+	char obuf[len+1];
+	int olen;
 	kbuf[len] = '\0';
 
 	copy_from_user(kbuf, buff, len);
@@ -27,6 +29,8 @@ static ssize_t varspace_chrdev_write(struct file *filp, const char __user *buff,
 
 	set_variable_data(&ncm_interp.variable_space, 1, &kbuf[1], len-1);
 
+	if(kbuf[0] == 49)
+		get_variable_data(&ncm_interp.variable_space, 1, obuf, &olen);
 	return len;
 }
 
