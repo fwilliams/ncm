@@ -7,6 +7,7 @@
 
 #include "variable_space.h"
 
+
 /* Initializes a new variable_space */
 int init_variable_space(varspace_t* varspace) {
 	int i;
@@ -26,8 +27,13 @@ int init_variable_space(varspace_t* varspace) {
 	return VARSPACE_OK;
 }
 
+/* Restores all resources used by the variable space */
+int destroy_variable_space(varspace_t* varspace) {
+	return VARSPACE_OK;
+}
+
 /* Gets the data stored for the variable id argument */
-int get_variable_data(varspace_t* varspace, u32 var_id, void* out_data, size_t* out_length) {
+int get_variable_data(varspace_t* varspace, u32 var_id, u8* out_data, size_t* out_length) {
 	struct variable* var;
 	int curr;
 
@@ -36,7 +42,7 @@ int get_variable_data(varspace_t* varspace, u32 var_id, void* out_data, size_t* 
 
 	read_lock(&var->buffer_locks[!curr]);
 
-	memcpy(out_data, var->data[curr], var->length[!curr]);
+	memcpy(out_data, var->data[!curr], var->length[!curr]);
 	*out_length = var->length[!curr];
 
 	read_unlock(&var->buffer_locks[!curr]);
@@ -45,7 +51,7 @@ int get_variable_data(varspace_t* varspace, u32 var_id, void* out_data, size_t* 
 }
 
 /* Sets the data for the variable id argument to the data argument */
-int set_variable_data(varspace_t* varspace, u32 var_id, void* data, size_t length) {
+int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length) {
 	struct variable* var;
 	int curr;
 

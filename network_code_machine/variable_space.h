@@ -27,6 +27,14 @@
 #define MAX_VAR_SIZE_BYTES 1500
 #endif
 
+/*
+ * Default name of character device used to write to variable space
+ */
+#ifndef VARSPACE_CHRDEV_NAME
+#define VARSPACE_CHRDEV_NAME "ncm_varspace"
+#endif
+
+
 #define VARSPACE_OK	0
 
 /*
@@ -46,17 +54,20 @@ struct variable {
 
 /* The variable space */
 typedef struct variable_space {
-	struct variable	at[MAX_VARIABLES];
+	struct variable	at[MAX_VARIABLES];	/* Array of all variables available */
 } varspace_t;
 
 
 /* Initializes a new variable_space */
 int init_variable_space(varspace_t* varspace);
 
+/* Restores all ressources used by the variable space */
+int destroy_variable_space(varspace_t* varspace);
+
 /* Gets the data stored for the variable id argument */
-int get_variable_data(varspace_t* varspace, u32 var_id, void* out_data, size_t* out_length);
+int get_variable_data(varspace_t* varspace, u32 var_id, u8* out_data, size_t* out_length);
 
 /* Sets the data for the variable id argument to the data argument */
-int set_variable_data(varspace_t* varspace, u32 var_id, void* data, size_t length);
+int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length);
 
 #endif /* VARIABLE_SPACE_H_ */

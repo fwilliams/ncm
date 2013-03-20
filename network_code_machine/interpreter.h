@@ -10,6 +10,7 @@
 #include <linux/delay.h>
 
 #include "future_queue.h"
+#include "variable_space.h"
 
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
@@ -58,6 +59,7 @@ struct interpreter {
 	struct netcode_instr* 	program;			/* Pointer to the netcode program */
 	struct task_struct*		thread;				/* Handle to the interpreters thread */
 	struct future_queue		future_queue;		/* The future queue */
+	varspace_t				variable_space;		/* The variable space */
 };
 
 /*

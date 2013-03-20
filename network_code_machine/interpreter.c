@@ -172,6 +172,7 @@ int start_interpreter(struct interpreter* interpreter, struct netcode_instr* pro
 	interpreter->program_length = prog_len;
 	interpreter->program = prog;
 	init_future_queue(&interpreter->future_queue);
+	init_variable_space(&interpreter->variable_space);
 	interpreter->thread = kthread_run(interpreter_threadfn, (void*) interpreter, "NCM interpreter");
 	return 0;
 }
