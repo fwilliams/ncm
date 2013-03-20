@@ -13,15 +13,12 @@ int init_variable_space(varspace_t* varspace) {
 	int i;
 
 	for(i = 0; i<MAX_VARIABLES; i++) {
-		varspace->at[i].length[0] = 0;
-		varspace->at[i].length[1] = 0;
+		varspace->at[i].varbuf[0].length = 0;
+		varspace->at[i].varbuf[1].length = 0;
 
-		rwlock_init(&varspace->at[i].buffer_locks[0]);
-		rwlock_init(&varspace->at[i].buffer_locks[1]);
-
-		atomic_set(&varspace->at[i].current_buffer, 0);
-
-		write_lock(&varspace->at[i].buffer_locks[0]);
+		varspace->at[i].read_buf = &varspace->at[i].varbuf[0];
+		varspace->at[i].write_buf = &varspace->at[i].varbuf[1];
+		spin_lock_init(&varspace->at[i].write_lock);
 	}
 
 	return VARSPACE_OK;
@@ -34,39 +31,40 @@ int destroy_variable_space(varspace_t* varspace) {
 
 /* Gets the data stored for the variable id argument */
 int get_variable_data(varspace_t* varspace, u32 var_id, u8* out_data, size_t* out_length) {
-	struct variable* var;
-	int curr;
+	variable_t* var;
+
+	rcu_read_lock();
 
 	var = &varspace->at[var_id];
-	curr = atomic_read(&var->current_buffer);
 
-	read_lock(&var->buffer_locks[!curr]);
+	memcpy(
+		out_data,
+		rcu_dereference(var->read_buf)->data,
+		rcu_dereference(var->read_buf)->length
+	);
 
-	memcpy(out_data, var->data[!curr], var->length[!curr]);
-	*out_length = var->length[!curr];
+	*out_length = rcu_dereference(var->read_buf)->length;
 
-	read_unlock(&var->buffer_locks[!curr]);
+	rcu_read_unlock();
 
 	return VARSPACE_OK;
 }
 
 /* Sets the data for the variable id argument to the data argument */
 int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length) {
-	struct variable* var;
-	int curr;
+	variable_t* var;
 
 	var = &varspace->at[var_id];
-	curr = atomic_read(&var->current_buffer);
 
-	memcpy(var->data[curr], data, length);
-	var->length[curr] = length;
+	spin_lock(&var->write_lock);
+		memcpy(rcu_dereference(var->write_buf)->data, data, length);
 
-	write_lock(&var->buffer_locks[!curr]);
+		varspace->at[var_id].write_buf = varspace->at[var_id].read_buf;
 
-	atomic_set(&var->current_buffer, !curr);
+		rcu_assign_pointer(var->read_buf, var->write_buf);
+	spin_unlock(&var->write_lock);
 
-	write_unlock(&var->buffer_locks[curr]);
-
+	synchronize_rcu();
 
 	return VARSPACE_OK;
 }

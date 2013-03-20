@@ -9,6 +9,7 @@
 #include <linux/atomic.h>
 #include <linux/spinlock.h>
 #include <linux/string.h>
+#include <linux/rcupdate.h>
 
 #ifndef VARIABLE_SPACE_H_
 #define VARIABLE_SPACE_H_
@@ -39,22 +40,23 @@
 
 /*
  * Struct representing a single variable
- *
- * NOTE:
- * The data is double buffered. This is done to prevent a possible priority inversion:
- * if a user space thread locks the mutex for writing and gets interrupted, this could block a
- * thread that needs access to the variable space (the NCM interpreter)
  */
-struct variable {
-	u8			data[2][MAX_VAR_SIZE_BYTES];	/* The (double buffered) data stored in this variable */
-	size_t		length[2];						/* The number of bytes of data stored */
-	atomic_t	current_buffer;					/* The current buffer being written to */
-	rwlock_t	buffer_locks[2];				/* Reader/Writer locks for each buffer */
-};
+typedef struct var_data {
+	u8			data[MAX_VAR_SIZE_BYTES];	/* The data stored in this variable */
+	size_t		length;						/* The number of bytes of data stored */
+} vardata_t;
+
+typedef struct variable {
+	vardata_t	varbuf[2];	/* Double buffer of variables */
+	vardata_t*	read_buf;	/* Pointer to the front buffer */
+	vardata_t*	write_buf;	/* Pointer to the back buffer */
+	spinlock_t	write_lock;	/* Lock on the write buffer pointer */
+} variable_t;
+
 
 /* The variable space */
 typedef struct variable_space {
-	struct variable	at[MAX_VARIABLES];	/* Array of all variables available */
+	variable_t	at[MAX_VARIABLES];	/* Array of all variables available */
 } varspace_t;
 
 
