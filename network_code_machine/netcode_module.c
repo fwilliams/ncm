@@ -29,6 +29,9 @@ static ssize_t varspace_chrdev_write(struct file *filp, const char __user *buff,
 	set_variable_data(&ncm_interp.variable_space, 1, &kbuf[1], len-1);
 	get_variable_data(&ncm_interp.variable_space, 1, obuf, &olen);
 
+	obuf[olen] = '\0';
+	printk("Read %s with length %d\n", obuf, olen);
+
 	return len;
 }
 
