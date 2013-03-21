@@ -26,11 +26,9 @@ static ssize_t varspace_chrdev_write(struct file *filp, const char __user *buff,
 	copy_from_user(kbuf, buff, len);
 
 	printk("Writing %s to variable %d\n", &kbuf[1], kbuf[0]);
-
 	set_variable_data(&ncm_interp.variable_space, 1, &kbuf[1], len-1);
+	get_variable_data(&ncm_interp.variable_space, 1, obuf, &olen);
 
-	if(kbuf[0] == 49)
-		get_variable_data(&ncm_interp.variable_space, 1, obuf, &olen);
 	return len;
 }
 

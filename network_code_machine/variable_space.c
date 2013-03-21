@@ -18,6 +18,7 @@ int init_variable_space(varspace_t* varspace) {
 
 		varspace->at[i].read_buf = &varspace->at[i].varbuf[0];
 		varspace->at[i].write_buf = &varspace->at[i].varbuf[1];
+
 		spin_lock_init(&varspace->at[i].write_lock);
 	}
 
@@ -46,6 +47,7 @@ int get_variable_data(varspace_t* varspace, u32 var_id, u8* out_data, size_t* ou
 	*out_length = rcu_dereference(var->read_buf)->length;
 
 	out_data[*out_length] = '\0';
+	printk("Read: %s with length: %d\n", out_data, *out_length);
 
 	rcu_read_unlock();
 
@@ -55,18 +57,23 @@ int get_variable_data(varspace_t* varspace, u32 var_id, u8* out_data, size_t* ou
 /* Sets the data for the variable id argument to the data argument */
 int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length) {
 	variable_t* var;
+	vardata_t* tmp;
 
 	var = &varspace->at[var_id];
 
 	spin_lock(&var->write_lock);
 		memcpy(var->write_buf->data, data, length);
-		var->write_buf->length = length;
-		var->write_buf = var->read_buf;
+		rcu_dereference(var->write_buf)->length = length;
 
+		tmp = rcu_dereference(var->read_buf);
 		rcu_assign_pointer(var->read_buf, var->write_buf);
+		rcu_assign_pointer(var->write_buf, tmp);
+
 	spin_unlock(&var->write_lock);
 
+
 	synchronize_rcu();
+
 
 	return VARSPACE_OK;
 }
