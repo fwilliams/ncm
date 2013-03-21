@@ -46,9 +46,6 @@ int get_variable_data(varspace_t* varspace, u32 var_id, u8* out_data, size_t* ou
 
 	*out_length = rcu_dereference(var->read_buf)->length;
 
-	out_data[*out_length] = '\0';
-	printk("Read: %s with length: %d\n", out_data, *out_length);
-
 	rcu_read_unlock();
 
 	return VARSPACE_OK;
