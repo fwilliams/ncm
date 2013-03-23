@@ -79,7 +79,8 @@ int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length)
  * returns a negative number if var_1 < var_2.
  *
  * NOTE: Variable comparison is done via byte-wise subtraction: var_1[i] - var_2[i]
- * until a non-zero result is found. The sign of the result
+ * until a non-zero result is found. The sign of the result determines the return value
+ * of this function.
  */
 int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
 	s32 i, result;
@@ -96,25 +97,28 @@ int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
 
 	result = 0;
 
-	if(len1 > len2) {
-		for(i = 0; i<(len1-len2); i++) {
-			result = rcu_dereference(var1->read_buf)->data[len2+i];
-			if(result != 0) {
-				break;
-			}
+	for(i = 0; i < min(len1,len2); i++) {
+		result = rcu_dereference(var1->read_buf)->data[min(len1,len2)-i-1] -
+				 rcu_dereference(var2->read_buf)->data[min(len1,len2)-i-1];
+		if(result != 0) {
+			break;
 		}
-	} else if(len1 < len2) {
-		for(i = 0; i<(len2-len1); i++) {
-			result = -rcu_dereference(var1->read_buf)->data[len1+i];
-			if(result != 0) {
-				break;
+	}
+
+	if(result == 0) {
+		if(len1 > len2) {
+			for(i = 0; i < (len1 - len2); i++) {
+				result = rcu_dereference(var1->read_buf)->data[len2 + i];
+				if(result != 0) {
+					break;
+				}
 			}
-		}
-	} else {
-		for(i = 0; i<(len1); i++) {
-			result = rcu_dereference(var1->read_buf)->data[i] - rcu_dereference(var2->read_buf)->data[i];
-			if(result != 0) {
-				break;
+		} else if(len1 < len2) {
+			for(i = 0; i < (len2 - len1); i++) {
+				result = -rcu_dereference(var2->read_buf)->data[len1 + i];
+				if(result != 0) {
+					break;
+				}
 			}
 		}
 	}
