@@ -35,6 +35,9 @@
 #define BACKUP_RECEIVE	13
 #define NOP				14
 #define END_OF_PROGRAM	15
+#define SET_COUNTER		16
+#define ADD_TO_COUNTER	17
+#define CLEAR_COUNTER	18
 
 /*
  * Program error codes
