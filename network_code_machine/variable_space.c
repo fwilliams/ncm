@@ -73,3 +73,51 @@ int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length)
 
 	return VARSPACE_OK;
 }
+
+/*
+ * Returns 0 if two variables are equal, returns a positive number if var_1 > var_2, and
+ * returns a negative number if var_1 < var_2.
+ *
+ * NOTE: Variable comparison is done via byte-wise subtraction: var_1[i] - var_2[i]
+ * until a non-zero result is found. The sign of the result
+ */
+int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
+	s32 i, result;
+	variable_t* var1, var2;
+	u32 len1, len2;
+
+	rcu_read_lock();
+
+	var1 = &varspace->at[var_id_1];
+	var2 = &varspace->at[var_id_2];
+
+	len1 = rcu_dereference(var1->read_buf)->length;
+	len2 = rcu_dereference(var2->read_buf)->length;
+
+	if(len1 > len2) {
+		for(i = 0; i<(len1-len2); i++) {
+			result = rcu_dereference(var1->read_buf)->data[len2+i];
+			if(result != 0) {
+				break;
+			}
+		}
+	} else if(len1 < len2) {
+		for(i = 0; i<(len2-len1); i++) {
+			result = -rcu_dereference(var1->read_buf)->data[len1+i];
+			if(result != 0) {
+				break;
+			}
+		}
+	} else {
+		for(i = 0; i<(len1); i++) {
+			result = rcu_dereference(var1->read_buf)->data[i] - rcu_dereference(var2->read_buf)->data[i];
+			if(result != 0) {
+				break;
+			}
+		}
+	}
+
+	rcu_read_unlock();
+
+	return result;
+}
