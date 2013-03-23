@@ -127,3 +127,47 @@ int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
 
 	return result;
 }
+
+/********************************************************************
+ * Start test_variable() handlers
+ *******************************************************************/
+bool handle_test_var_is_zero(varspace_t* varspace, u32 var_id) {
+	return false;
+}
+
+bool handle_test_var_is_nonzero(varspace_t* varspace, u32 var_id) {
+	return false;
+}
+
+bool handle_test_var_even_parity(varspace_t* varspace, u32 var_id) {
+	return false;
+}
+
+bool handle_test_var_odd_parity(varspace_t* varspace, u32 var_id) {
+	return false;
+}
+/********************************************************************
+ * End test_variable() handlers
+ *******************************************************************/
+
+/*
+ * Tests if the given condition is true for the variable. The possible
+ * condition masks are:
+ * 	* VAR_IS_ZERO
+ * 	* VAR_IS_NONZERO
+ * 	* VAR_EVEN_PARITY
+ *	* VAR_ODD_PARITY
+ */
+bool test_variable(varspace_t* varspace, u32 var_id, u32 condition_mask) {
+	switch(condition_mask) {
+	case VAR_IS_ZERO:
+		return handle_test_var_is_zero(varspace, var_id);
+	case VAR_IS_NONZERO:
+		return handle_test_var_is_nonzero(varspace, var_id);
+	case VAR_EVEN_PARITY:
+		return handle_test_var_even_parity(varspace, var_id);
+	case VAR_ODD_PARITY:
+		return handle_test_var_odd_parity(varspace, var_id);
+	}
+	return false;
+}

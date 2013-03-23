@@ -15,6 +15,14 @@
 #define VARIABLE_SPACE_H_
 
 /*
+ * Test flags for test_variable()
+ */
+#define VAR_IS_ZERO		0
+#define VAR_IS_NONZERO	1
+#define VAR_EVEN_PARITY	2
+#define VAR_ODD_PARITY	3
+
+/*
  * Maximum number of variables that can exist in the variable space at one time
  */
 #ifndef MAX_VARIABLES
@@ -81,5 +89,15 @@ int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length)
  * of this function.
  */
 int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2);
+
+/*
+ * Tests if the given condition is true for the variable. The possible
+ * condition masks are:
+ * 	* VAR_IS_ZERO
+ * 	* VAR_IS_NONZERO
+ * 	* VAR_EVEN_PARITY
+ *	* VAR_ODD_PARITY
+ */
+bool test_variable(varspace_t* varspace, u32 var_id, u32 condition_mask);
 
 #endif /* VARIABLE_SPACE_H_ */
