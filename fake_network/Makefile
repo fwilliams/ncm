@@ -5,6 +5,9 @@ else
 # /backwards compatibility
 
 MODNAME=nc_net
+# for laptop
+# KDIR ?= /usr/src/linux-headers-3.5.0-23-generic 
+# for vm
 KDIR ?= /usr/src/linux-3.6.11-rt
 
 all: build
