@@ -12,6 +12,7 @@
 #include "future_queue.h"
 #include "variable_space.h"
 #include "guards.h"
+#include "counter.h"
 
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
@@ -64,6 +65,7 @@ struct interpreter {
 	struct task_struct*		thread;				/* Handle to the interpreters thread */
 	struct future_queue		future_queue;		/* The future queue */
 	varspace_t				variable_space;		/* The variable space */
+	counter_array_t			counters;			/* Array of counters */
 };
 
 /*
