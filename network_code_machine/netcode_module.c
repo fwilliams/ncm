@@ -11,7 +11,7 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Francis Williams, 2013");
 MODULE_DESCRIPTION("Network Code interpreter module");
 
-#define PROGRAM_LEN 14
+#define PROGRAM_LEN 16
 
 struct interpreter ncm_interp;
 struct netcode_instr program[PROGRAM_LEN];
@@ -23,6 +23,7 @@ static ssize_t varspace_chrdev_read(struct file* filep, char* buff, size_t len, 
 	u32 klen;
 
 	get_variable_data(&ncm_interp.variable_space, 1, kbuf, &klen);
+
 	if(copy_to_user(buff, kbuf, min(len, klen)) != 0) {
 		printk("Failed reading from ncm_varspace\n");
 		return 0;
@@ -36,12 +37,20 @@ static ssize_t varspace_chrdev_read(struct file* filep, char* buff, size_t len, 
 
 static ssize_t varspace_chrdev_write(struct file* filp, const char __user* buff, size_t len, loff_t* off) {
 	u8 kbuf[len+1];
+	u32 var_id;
 
 	copy_from_user(kbuf, buff, len);
-	set_variable_data(&ncm_interp.variable_space, 1, &kbuf[1], len-1);
 
-	//kbuf[len] = '\0';
-	//printk("Wrote %s to variable %d\n", &kbuf[1], kbuf[0]);
+	if(kbuf[0] == 49) {
+		var_id = 0;
+	} else {
+		var_id = 1;
+	}
+
+	set_variable_data(&ncm_interp.variable_space, var_id, &kbuf[1], len-1);
+
+	kbuf[len] = '\0';
+	printk("Wrote %s to variable %d\n", &kbuf[1], kbuf[0]);
 
 	return len;
 }
@@ -93,7 +102,16 @@ int init_module() {
 	program[12].type = GOTO;
 	program[12].args[0] = 10;
 
-	program[13].type = END_OF_PROGRAM;
+	program[13].type = IF;
+	program[13].args[0] = GREATER_VAR_VAR;
+	program[13].args[1] = 15;
+	program[13].args[2] = 0;
+	program[13].args[3] = 1;
+
+	program[14].type = GOTO;
+	program[14].args[0] = 13;
+
+	program[15].type = END_OF_PROGRAM;
 
 	chrdev_major = register_chrdev(0, VARSPACE_CHRDEV_NAME, &fops);
 	printk("Registered char device with major number %d\n", chrdev_major);

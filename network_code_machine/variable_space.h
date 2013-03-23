@@ -77,7 +77,8 @@ int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length)
  * returns a negative number if var_1 < var_2.
  *
  * NOTE: Variable comparison is done via byte-wise subtraction: var_1[i] - var_2[i]
- * until a non-zero result is found. The sign of the result
+ * until a non-zero result is found. The sign of the result determines the return value
+ * of this function.
  */
 int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2);
 
