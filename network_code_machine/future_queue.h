@@ -22,7 +22,9 @@
 /*
  * The maximum length of the future queue
  */
+#ifndef MAX_FUTURES
 #define MAX_FUTURES		10
+#endif
 
 /*
  * An element in the future queue

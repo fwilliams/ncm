@@ -7,6 +7,7 @@
  */
 
 #include "interpreter.h"
+#include "guards.h"
 
 /*
  * Statuses that can be returned by instruction
@@ -109,6 +110,67 @@ enum instr_result handle_end_of_program(struct interpreter* interpreter) {
 	return INSTR_OK;
 }
 
+enum instr_result handle_if(struct interpreter* interpreter) {
+	u32 error;
+	u32 guard = interpreter->program[interpreter->program_counter].args[0];
+	u32 jmp = interpreter->program[interpreter->program_counter].args[1];
+	u32* args = &interpreter->program[interpreter->program_counter].args[2];
+	bool result = test_guard(interpreter, guard, args, &error);
+
+	printk("IF instruction reached at PC = %d with args %d, %d\n",
+			interpreter->program_counter,
+			guard, jmp);
+
+	if(error != GUARD_OK) {
+		return INSTR_ERROR;
+	}
+
+	if(result) {
+		interpreter->program_counter = jmp;
+		return INSTR_CHANGE_PC;
+	}
+
+	return INSTR_OK;
+}
+
+enum instr_result handle_clear_counter(struct interpreter* interpreter) {
+	u32 counter_id = interpreter->program[interpreter->program_counter].args[0];
+
+	reset_counter(&interpreter->counters, counter_id);
+
+	printk("CLEAR_COUNTER instruction reached at PC = %d with arg %d\n",
+			interpreter->program_counter,
+			counter_id);
+
+	return INSTR_OK;
+}
+
+enum instr_result handle_add_to_counter(struct interpreter* interpreter) {
+	u32 counter_id = interpreter->program[interpreter->program_counter].args[0];
+	u32 amount = interpreter->program[interpreter->program_counter].args[1];
+
+	add_to_counter(&interpreter->counters, counter_id, amount);
+
+	printk("ADD_TO_COUNTER instruction reached at PC = %d with args %d, %d\n",
+			interpreter->program_counter,
+			counter_id, amount);
+
+	return INSTR_OK;
+}
+
+enum instr_result handle_set_counter(struct interpreter* interpreter) {
+	u32 counter_id = interpreter->program[interpreter->program_counter].args[0];
+	u32 value = interpreter->program[interpreter->program_counter].args[1];
+
+	set_counter(&interpreter->counters, counter_id, value);
+
+	printk("SET_COUNTER instruction reached at PC = %d with args %d, %d\n",
+			interpreter->program_counter,
+			counter_id, value);
+
+	return INSTR_OK;
+}
+
 /*****************************************************************************
  * End interpreter instruction handlers
  *****************************************************************************/
@@ -141,6 +203,18 @@ int interpreter_threadfn(void* data) {
 		case WAIT:
 			instr_res = handle_wait(interpreter);
 			break;
+		case IF:
+			instr_res = handle_if(interpreter);
+			break;
+		case CLEAR_COUNTER:
+			instr_res = handle_clear_counter(interpreter);
+			break;
+		case ADD_TO_COUNTER:
+			instr_res = handle_add_to_counter(interpreter);
+			break;
+		case SET_COUNTER:
+			instr_res = handle_set_counter(interpreter);
+			break;
 		case END_OF_PROGRAM:
 			instr_res = handle_end_of_program(interpreter);
 			return PROGRAM_OK;
@@ -172,6 +246,7 @@ int start_interpreter(struct interpreter* interpreter, struct netcode_instr* pro
 	interpreter->program_length = prog_len;
 	interpreter->program = prog;
 	init_future_queue(&interpreter->future_queue);
+	init_variable_space(&interpreter->variable_space);
 	interpreter->thread = kthread_run(interpreter_threadfn, (void*) interpreter, "NCM interpreter");
 	return 0;
 }

@@ -10,6 +10,8 @@
 #include <linux/delay.h>
 
 #include "future_queue.h"
+#include "variable_space.h"
+#include "counter.h"
 
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
@@ -33,6 +35,9 @@
 #define BACKUP_RECEIVE	13
 #define NOP				14
 #define END_OF_PROGRAM	15
+#define SET_COUNTER		16
+#define ADD_TO_COUNTER	17
+#define CLEAR_COUNTER	18
 
 /*
  * Program error codes
@@ -46,7 +51,7 @@
  */
 struct netcode_instr {
 	u8 	type;		/* The instruction type */
-	u32 args[3];	/* The instruction args. Note some may be unused */
+	u32 args[4];	/* The instruction args. Note some may be unused */
 };
 
 /*
@@ -58,6 +63,8 @@ struct interpreter {
 	struct netcode_instr* 	program;			/* Pointer to the netcode program */
 	struct task_struct*		thread;				/* Handle to the interpreters thread */
 	struct future_queue		future_queue;		/* The future queue */
+	varspace_t				variable_space;		/* The variable space */
+	counter_array_t			counters;			/* Array of counters */
 };
 
 /*

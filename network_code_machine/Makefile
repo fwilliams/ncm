@@ -1,10 +1,10 @@
-kernel_dir := /usr/src/linux-3.6.11-rt
+kernel_dir 			:= /usr/src/linux-3.6.11-rt
 
-module_name := netcode
+module_name 		:= netcode
 
 obj-m				:= $(module_name).o
-$(module_name)-y	:= netcode_helper.o future_queue.o interpreter.o netcode_module.o
-ccflags-y := -std=gnu99
+$(module_name)-y	:= netcode_helper.o future_queue.o variable_space.o counter.o guards.o interpreter.o netcode_module.o
+ccflags-y 			:= -std=gnu99
 
 all:
 	make -C $(kernel_dir) M=$(PWD) modules
@@ -17,4 +17,4 @@ uninstall:
 update:
 	make uninstall clean all install
 delete:
-	make clean uninstall	
+	make clean uninstall
