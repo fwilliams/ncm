@@ -5,12 +5,13 @@
 
 #include "netcode_helper.h"
 #include "interpreter.h"
+#include "guards.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Francis Williams, 2013");
 MODULE_DESCRIPTION("Network Code interpreter module");
 
-#define PROGRAM_LEN 11
+#define PROGRAM_LEN 14
 
 struct interpreter ncm_interp;
 struct netcode_instr program[PROGRAM_LEN];
@@ -76,11 +77,23 @@ int init_module() {
 	program[7].type = NOP;
 	program[8].type = HALT;
 
-	program[9].type = IF;
-	program[9].args[0] = ALWAYS_TRUE;
-	program[9].args[1] = 10;
+	program[9].type = CLEAR_COUNTER;
+	program[9].args[0] = 1;
 
-	program[10].type = END_OF_PROGRAM;
+	program[10].type = IF;
+	program[10].args[0] = TEST_COUNT;
+	program[10].args[1] = 13;
+	program[10].args[2] = 1;
+	program[10].args[3] = 10;
+
+	program[11].type = ADD_TO_COUNTER;
+	program[11].args[0] = 1;
+	program[11].args[1] = 1;
+
+	program[12].type = GOTO;
+	program[12].args[0] = 10;
+
+	program[13].type = END_OF_PROGRAM;
 
 	chrdev_major = register_chrdev(0, VARSPACE_CHRDEV_NAME, &fops);
 	printk("Registered char device with major number %d\n", chrdev_major);

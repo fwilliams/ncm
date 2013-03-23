@@ -7,6 +7,8 @@
 
 #include <linux/types.h>
 
+#include "interpreter.h"
+
 #ifndef GUARDS_H_
 #define GUARDS_H_
 
@@ -29,6 +31,6 @@
 /*
  * Tests if a guard is true or false
  */
-bool test_guard(u32 guard_id, u32* args, u32* status);
+bool test_guard(struct interpreter* interpreter, u32 guard_id, u32* args, u32* status);
 
 #endif /* GUARDS_H_ */

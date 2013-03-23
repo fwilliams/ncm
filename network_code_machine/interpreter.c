@@ -7,6 +7,7 @@
  */
 
 #include "interpreter.h"
+#include "guards.h"
 
 /*
  * Statuses that can be returned by instruction
@@ -114,7 +115,7 @@ enum instr_result handle_if(struct interpreter* interpreter) {
 	u32 guard = interpreter->program[interpreter->program_counter].args[0];
 	u32 jmp = interpreter->program[interpreter->program_counter].args[1];
 	u32* args = &interpreter->program[interpreter->program_counter].args[2];
-	bool result = test_guard(guard, args, &error);
+	bool result = test_guard(interpreter, guard, args, &error);
 
 	printk("IF instruction reached at PC = %d with args %d, %d\n",
 			interpreter->program_counter,
@@ -161,7 +162,7 @@ enum instr_result handle_set_counter(struct interpreter* interpreter) {
 	u32 counter_id = interpreter->program[interpreter->program_counter].args[0];
 	u32 value = interpreter->program[interpreter->program_counter].args[1];
 
-	add_to_counter(&interpreter->counters, counter_id, value);
+	set_counter(&interpreter->counters, counter_id, value);
 
 	printk("SET_COUNTER instruction reached at PC = %d with args %d, %d\n",
 			interpreter->program_counter,

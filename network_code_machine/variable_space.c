@@ -7,7 +7,6 @@
 
 #include "variable_space.h"
 
-
 /* Initializes a new variable_space */
 int init_variable_space(varspace_t* varspace) {
 	int i;

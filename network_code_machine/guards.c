@@ -15,8 +15,8 @@ bool handle_send_buffer_empty(void) {
 	return false;
 }
 
-bool handle_test_count(u32 test_value) {
-	return false;
+bool handle_test_count(struct interpreter* interpreter, u32 counter_id, u32 test_value) {
+	return (interpreter->counters.at[counter_id] == test_value);
 }
 
 bool handle_status_test(u32 test_value) {
@@ -50,7 +50,7 @@ bool handle_var_queue_full(u32 var_id) {
 /*
  * Tests if a guard is true or false
  */
-bool test_guard(u32 guard_id, u32* args, u32* status) {
+bool test_guard(struct interpreter* interpreter, u32 guard_id, u32* args, u32* status) {
 	*status = GUARD_OK;
 
 	switch(guard_id) {
@@ -63,7 +63,7 @@ bool test_guard(u32 guard_id, u32* args, u32* status) {
 	case SEND_BUFFER_EMPTY:
 		return handle_send_buffer_empty();
 	case TEST_COUNT:
-		return handle_test_count(args[0]);
+		return handle_test_count(interpreter, args[0], args[1]);
 	case STATUS_TEST:
 		return handle_status_test(args[0]);
 	case EQUAL_VAR_VAR:

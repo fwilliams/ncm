@@ -11,7 +11,6 @@
 
 #include "future_queue.h"
 #include "variable_space.h"
-#include "guards.h"
 #include "counter.h"
 
 #ifndef INTERPRETER_H_
@@ -52,7 +51,7 @@
  */
 struct netcode_instr {
 	u8 	type;		/* The instruction type */
-	u32 args[3];	/* The instruction args. Note some may be unused */
+	u32 args[4];	/* The instruction args. Note some may be unused */
 };
 
 /*
