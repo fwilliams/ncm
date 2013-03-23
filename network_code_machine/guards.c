@@ -23,16 +23,16 @@ bool handle_status_test(u32 test_value) {
 	return false;
 }
 
-bool handle_equal_var_var(u32 var_id_1, u32 var_id_2) {
-	return false;
+bool handle_equal_var_var(struct interpreter* interpreter, u32 var_id_1, u32 var_id_2) {
+	return (cmp_variables(&interpreter->variable_space, var_id_1, var_id_2) == 0);
 }
 
-bool handle_greater_var_var(u32 var_id_1, u32 var_id_2) {
-	return false;
+bool handle_greater_var_var(struct interpreter* interpreter, u32 var_id_1, u32 var_id_2) {
+	return (cmp_variables(&interpreter->variable_space, var_id_1, var_id_2) > 0);
 }
 
-bool handle_less_var_var(u32 var_id_1, u32 var_id_2) {
-	return false;
+bool handle_less_var_var(struct interpreter* interpreter, u32 var_id_1, u32 var_id_2) {
+	return (cmp_variables(&interpreter->variable_space, var_id_1, var_id_2) < 0);
 }
 
 bool handle_test_var(u32 var_id, u32 test_mask) {
@@ -67,11 +67,11 @@ bool test_guard(struct interpreter* interpreter, u32 guard_id, u32* args, u32* s
 	case STATUS_TEST:
 		return handle_status_test(args[0]);
 	case EQUAL_VAR_VAR:
-		return handle_equal_var_var(args[0], args[1]);
+		return handle_equal_var_var(interpreter, args[0], args[1]);
 	case GREATER_VAR_VAR:
-		return handle_greater_var_var(args[0], args[1]);
+		return handle_greater_var_var(interpreter, args[0], args[1]);
 	case LESS_VAR_VAR:
-		return handle_less_var_var(args[0], args[1]);
+		return handle_less_var_var(interpreter, args[0], args[1]);
 	case TEST_VAR:
 		return handle_test_var(args[0], args[1]);
 	case VAR_QUEUE_EMPTY:
