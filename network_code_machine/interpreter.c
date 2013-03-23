@@ -109,6 +109,29 @@ enum instr_result handle_end_of_program(struct interpreter* interpreter) {
 	return INSTR_OK;
 }
 
+enum instr_result handle_if(struct interpreter* interpreter) {
+	u32 error;
+	u32 guard = interpreter->program[interpreter->program_counter].args[0];
+	u32 jmp = interpreter->program[interpreter->program_counter].args[1];
+	u32* args = &interpreter->program[interpreter->program_counter].args[2];
+	bool result = test_guard(guard, args, &error);
+
+	printk("IF instruction reached at PC = %d with args %d, %d\n",
+			interpreter->program_counter,
+			guard, jmp);
+
+	if(error != GUARD_OK) {
+		return INSTR_ERROR;
+	}
+
+	if(result) {
+		interpreter->program_counter = jmp;
+		return INSTR_CHANGE_PC;
+	}
+
+	return INSTR_OK;
+}
+
 /*****************************************************************************
  * End interpreter instruction handlers
  *****************************************************************************/
@@ -140,6 +163,9 @@ int interpreter_threadfn(void* data) {
 			break;
 		case WAIT:
 			instr_res = handle_wait(interpreter);
+			break;
+		case IF:
+			instr_res = handle_if(interpreter);
 			break;
 		case END_OF_PROGRAM:
 			instr_res = handle_end_of_program(interpreter);

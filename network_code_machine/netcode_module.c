@@ -10,33 +10,44 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Francis Williams, 2013");
 MODULE_DESCRIPTION("Network Code interpreter module");
 
-#define PROGRAM_LEN 10
+#define PROGRAM_LEN 11
 
 struct interpreter ncm_interp;
 struct netcode_instr program[PROGRAM_LEN];
 
 static int chrdev_major;
 
-static ssize_t varspace_chrdev_write(struct file *filp, const char __user *buff, size_t len, loff_t *off) {
-	char kbuf[len+1];
-	char obuf[len+1];
-	int olen;
-	kbuf[len] = '\0';
+static ssize_t varspace_chrdev_read(struct file* filep, char* buff, size_t len, loff_t* off) {
+	u8 kbuf[MAX_VAR_SIZE_BYTES];
+	u32 klen;
+
+	get_variable_data(&ncm_interp.variable_space, 1, kbuf, &klen);
+	if(copy_to_user(buff, kbuf, min(len, klen)) != 0) {
+		printk("Failed reading from ncm_varspace\n");
+		return 0;
+	}
+
+	//kbuf[klen] = '\0';
+	//printk("Read %s with length %d from variable %d\n", kbuf, min(len, klen), *off);
+
+	return min(len, klen);
+}
+
+static ssize_t varspace_chrdev_write(struct file* filp, const char __user* buff, size_t len, loff_t* off) {
+	u8 kbuf[len+1];
 
 	copy_from_user(kbuf, buff, len);
-
-	printk("Writing %s to variable %d\n", &kbuf[1], kbuf[0]);
 	set_variable_data(&ncm_interp.variable_space, 1, &kbuf[1], len-1);
-	get_variable_data(&ncm_interp.variable_space, 1, obuf, &olen);
 
-	obuf[olen] = '\0';
-	printk("Read %s with length %d\n", obuf, olen);
+	//kbuf[len] = '\0';
+	//printk("Wrote %s to variable %d\n", &kbuf[1], kbuf[0]);
 
 	return len;
 }
 
 static struct file_operations fops = {
-	.write = varspace_chrdev_write,
+	.read	= varspace_chrdev_read,
+	.write	= varspace_chrdev_write,
 };
 
 
@@ -65,10 +76,13 @@ int init_module() {
 	program[7].type = NOP;
 	program[8].type = HALT;
 
-	program[9].type = END_OF_PROGRAM;
+	program[9].type = IF;
+	program[9].args[0] = ALWAYS_TRUE;
+	program[9].args[1] = 10;
+
+	program[10].type = END_OF_PROGRAM;
 
 	chrdev_major = register_chrdev(0, VARSPACE_CHRDEV_NAME, &fops);
-
 	printk("Registered char device with major number %d\n", chrdev_major);
 
 	start_interpreter(&ncm_interp, program, PROGRAM_LEN);
