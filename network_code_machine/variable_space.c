@@ -94,6 +94,8 @@ int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
 	len1 = rcu_dereference(var1->read_buf)->length;
 	len2 = rcu_dereference(var2->read_buf)->length;
 
+	result = 0;
+
 	if(len1 > len2) {
 		for(i = 0; i<(len1-len2); i++) {
 			result = rcu_dereference(var1->read_buf)->data[len2+i];
