@@ -70,7 +70,6 @@ int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length)
 
 	synchronize_rcu();
 
-
 	return VARSPACE_OK;
 }
 
