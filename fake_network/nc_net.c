@@ -14,6 +14,7 @@
 #include "nc_net.h"
 
 
+#define NET_DEVICE_NAME "enp0s3" // "wlan0" // "eth0"  //sometimes enp0s3
 
 unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
 
@@ -23,7 +24,8 @@ struct nc_channel channels[] = {
 	{
 		{ {0,0}, /* kernel's list structure */ 0,/*message*/ 0/*length*/ },
 //		{ 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
-		{ 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // send to yourself, vm.
+//		{ 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // send to yourself, vm.
+		{ 0x0a, 0x00, 0x27, 0x00, 0x00, 0x00 } // virtual interaface laptop address
 	}
 };
 
@@ -119,13 +121,24 @@ void run_tests(void) {
 
 
 
-#define NET_DEVICE_NAME "lo" // "wlan0" // "eth0"  //sometimes enp0s3
 
 int nc_rcvmsg(unsigned char *buffer, int length) {
 	struct socket *sk = NULL;
 	int i, ret, j;
 	struct msghdr msg;
+	char addrbuf[6];
+	char controlbuf[20];
 	struct kvec vec = {buffer, length};
+
+	/*test*/
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_name = addrbuf;
+	msg.msg_namelen = sizeof(addrbuf);
+	msg.msg_iov = &vec;
+	msg.msg_iovlen = 1;
+	msg.msg_control = controlbuf;
+	msg.msg_controllen = sizeof(controlbuf);
+	/*test*/
 
 	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
 	if (ret < 0) {
@@ -136,10 +149,17 @@ int nc_rcvmsg(unsigned char *buffer, int length) {
 	printk(KERN_EMERG "before...");
 	length = kernel_recvmsg(sk, &msg, &vec, 1, length, 0/*MSG_DONTWAIT*/);
 	printk(KERN_EMERG "after...");
-	printk(KERN_INFO "received length: %i", length);
-	for (i = 0; i < length; i++) {
-		printk(KERN_INFO "received: %c", buffer[i]);
-	}
+	printk(KERN_EMERG "received length: %i", length);
+//	for (i = 0; i < msg.msg_namelen; i++) {
+//		printk(KERN_INFO "%c", addrbuf[i]);
+//	}
+//	for (i = 0; i < msg.msg_controllen; i++) {
+//		printk(KERN_INFO "%c", controlbuf[i]);
+//	}
+//	for (i = 0; i < length; i++) {
+//		printk(KERN_INFO "%c", buffer[i]);
+//	}
+
 	if (length == -1) {
 		printk(KERN_INFO "Failed to receive message.");
 		return -1;
@@ -219,7 +239,7 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *m
 	eh->h_proto = 0x00;
 
 	/*fill the frame with some data*/
-	for (i = 0; i < sizeof(message); i++) {
+	for (i = 0; i < length; i++) {
 		data[i] = message[i];
 	}
 
@@ -270,14 +290,15 @@ int init_module(void) {
 	unsigned char message[] = "hello there";
 	unsigned char buff[ETH_DATA_LEN];
 	nc_channel_send(0, message, sizeof(message)/sizeof(unsigned char));
-	nc_channel_receive(0, 0);
-	for(i = 0; i < NUM_CHANNELS; i++){
-		stop_receiving(i);
-	}
 	printk(KERN_INFO "End init...\n");
 	return 0;
 }
 
 void cleanup_module(void) {
+	int i;
+	nc_channel_receive(0, 0);
+	for(i = 0; i < NUM_CHANNELS; i++){
+		stop_receiving(i);
+	}
 	printk(KERN_INFO "Goodbye world 1.\n");
 }
