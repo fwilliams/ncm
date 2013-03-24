@@ -70,7 +70,6 @@ int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length)
 
 	synchronize_rcu();
 
-
 	return VARSPACE_OK;
 }
 
@@ -97,30 +96,24 @@ int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
 
 	result = 0;
 
-	for(i = 0; i < min(len1,len2); i++) {
-		result = rcu_dereference(var1->read_buf)->data[min(len1,len2)-i-1] -
-				 rcu_dereference(var2->read_buf)->data[min(len1,len2)-i-1];
-		if(result != 0) {
-			break;
-		}
-	}
-
-	if(result == 0) {
-		if(len1 > len2) {
-			for(i = 0; i < (len1 - len2); i++) {
-				result = rcu_dereference(var1->read_buf)->data[len2 + i];
-				if(result != 0) {
-					break;
-				}
-			}
-		} else if(len1 < len2) {
-			for(i = 0; i < (len2 - len1); i++) {
-				result = -rcu_dereference(var2->read_buf)->data[len1 + i];
-				if(result != 0) {
-					break;
-				}
+	if(len1 > len2) {
+		for(i = 0; i < (len1 - len2); i++) {
+			if(rcu_dereference(var1->read_buf)->data[i] != 0) {
+				rcu_read_unlock();
+				return rcu_dereference(var1->read_buf)->data[i];
 			}
 		}
+		result = memcmp(&rcu_dereference(var1->read_buf)->data[(len1 - len2)], rcu_dereference(var2->read_buf)->data, len2);
+	} else if(len1 < len2) {
+		for(i = 0; i < (len2 - len1); i++) {
+			if(rcu_dereference(var2->read_buf)->data[i] != 0) {
+				rcu_read_unlock();
+				return -rcu_dereference(var2->read_buf)->data[i];
+			}
+		}
+		result = memcmp(rcu_dereference(var1->read_buf)->data, &rcu_dereference(var2->read_buf)->data[(len2 - len1)], len1);
+	} else if(len1 == len2) {
+		result = memcmp(rcu_dereference(var1->read_buf)->data, rcu_dereference(var2->read_buf)->data, len1);
 	}
 
 	rcu_read_unlock();
@@ -132,10 +125,42 @@ int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
  * Start test_variable() handlers
  *******************************************************************/
 bool handle_test_var_is_zero(varspace_t* varspace, u32 var_id) {
-	return false;
+	s32 i;
+	variable_t *var;
+
+	rcu_read_lock();
+
+	var = &(varspace->at[var_id]);
+
+	for(i = 0; i < rcu_dereference(var->read_buf)->length; i++) {
+		if(rcu_dereference(var->read_buf)->data[i] != 0) {
+			rcu_read_unlock();
+			return false;
+		}
+	}
+
+	rcu_read_unlock();
+
+	return true;
 }
 
 bool handle_test_var_is_nonzero(varspace_t* varspace, u32 var_id) {
+	s32 i;
+	variable_t *var;
+
+	rcu_read_lock();
+
+	var = &(varspace->at[var_id]);
+
+	for(i = 0; i < rcu_dereference(var->read_buf)->length; i++) {
+		if(rcu_dereference(var->read_buf)->data[i] != 0) {
+			rcu_read_unlock();
+			return true;
+		}
+	}
+
+	rcu_read_unlock();
+
 	return false;
 }
 
@@ -153,10 +178,10 @@ bool handle_test_var_odd_parity(varspace_t* varspace, u32 var_id) {
 /*
  * Tests if the given condition is true for the variable. The possible
  * condition masks are:
- * 	* VAR_IS_ZERO
- * 	* VAR_IS_NONZERO
- * 	* VAR_EVEN_PARITY
- *	* VAR_ODD_PARITY
+ * 	* VAR_IS_ZERO		-- Returns true if the variable is zero. Note: A variable of length 0 is considered equal to 0
+ * 	* VAR_IS_NONZERO	-- Returns true if the variable is non-zero
+ * 	* VAR_EVEN_PARITY	-- Returns true if the variable has even parity
+ *	* VAR_ODD_PARITY	-- Returns true if the variable has odd parity
  */
 bool test_variable(varspace_t* varspace, u32 var_id, u32 condition_mask) {
 	switch(condition_mask) {
