@@ -31,7 +31,8 @@ void receiving_threadfn(void* data){
 	unsigned char buff[ETH_DATA_LEN];
 	int length;
 	int channel = (int) data;
-	while(true){
+
+	while(!kthread_should_stop()){
 		length = nc_rcvmsg(buff, ETH_DATA_LEN);
 		printk(KERN_EMERG "received... (status: %i)", length);
 		if(length < 0){
