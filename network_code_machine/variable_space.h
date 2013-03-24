@@ -93,10 +93,10 @@ int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2);
 /*
  * Tests if the given condition is true for the variable. The possible
  * condition masks are:
- * 	* VAR_IS_ZERO
- * 	* VAR_IS_NONZERO
- * 	* VAR_EVEN_PARITY
- *	* VAR_ODD_PARITY
+ * 	* VAR_IS_ZERO		-- Returns true if the variable is zero. Note: A variable of length 0 is considered equal to 0
+ * 	* VAR_IS_NONZERO	-- Returns true if the variable is non-zero
+ * 	* VAR_EVEN_PARITY	-- Returns true if the variable has even parity
+ *	* VAR_ODD_PARITY	-- Returns true if the variable has odd parity
  */
 bool test_variable(varspace_t* varspace, u32 var_id, u32 condition_mask);
 

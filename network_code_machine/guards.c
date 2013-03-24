@@ -35,8 +35,8 @@ bool handle_less_var_var(struct interpreter* interpreter, u32 var_id_1, u32 var_
 	return (cmp_variables(&interpreter->variable_space, var_id_1, var_id_2) < 0);
 }
 
-bool handle_test_var(u32 var_id, u32 test_mask) {
-	return false;
+bool handle_test_var(struct interpreter* interpreter, u32 var_id, u32 test_mask) {
+	return test_variable(&interpreter->variable_space, var_id, test_mask);
 }
 
 bool handle_var_queue_empty(u32 var_id) {
@@ -73,7 +73,7 @@ bool test_guard(struct interpreter* interpreter, u32 guard_id, u32* args, u32* s
 	case LESS_VAR_VAR:
 		return handle_less_var_var(interpreter, args[0], args[1]);
 	case TEST_VAR:
-		return handle_test_var(args[0], args[1]);
+		return handle_test_var(interpreter, args[0], args[1]);
 	case VAR_QUEUE_EMPTY:
 		return handle_var_queue_empty(args[0]);
 	case VAR_QUEUE_FULL:
