@@ -28,12 +28,15 @@
 	list_add(&(tmp->list), &(chan->message_queue.list));
  * */
 
+
+unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
+
 #define NUM_CHANNELS sizeof(channels) / sizeof(struct nc_channel)
 
 struct nc_channel channels[] = {
 	{
 		{ {0,0}, /* kernel's list structure */ 0,/*message*/ 0/*length*/ },
-		{ 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5C } /*mac address*/
+		{ 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } /*mac address*/
 	}
 };
 
@@ -41,8 +44,6 @@ struct nc_channel channels[] = {
 void init_nc_channel(struct nc_channel *chan) {
 	INIT_LIST_HEAD(&chan->message_queue.list);
 }
-
-unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5C };
 
 int nc_channel_send(int chan, unsigned char *msg, int length) {
 	struct nc_channel *channel = &channels[chan];
@@ -99,7 +100,7 @@ void run_tests(void) {
 
 
 
-#define NET_DEVICE_NAME "eth0" // "wlan0" // "eth0"  //sometimes enp0s3
+#define NET_DEVICE_NAME "lo" // "wlan0" // "eth0"  //sometimes enp0s3
 
 int nc_rcvmsg(unsigned char *buffer, int length) {
 	struct socket *sk = NULL;
@@ -139,7 +140,6 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *m
 	struct socket *sk = NULL;
 	struct msghdr msg;
 	struct kvec vec;
-	char buffer[ETH_FRAME_LEN];
 	/*pointer to ethenet header*/
 	unsigned char* etherhead;
 	/*userdata in ethernet frame*/
@@ -148,6 +148,11 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *m
 	struct ethhdr *eh;
 	/* destination*/
 	struct sockaddr_ll socket_address;
+
+	if(length > ETH_DATA_LEN){
+		return -1;
+	}
+	char buffer[length + ETH_HLEN];
 
 	dev = dev_get_by_name(&init_net, NET_DEVICE_NAME);
 	ifindex = dev->ifindex;
@@ -223,7 +228,7 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *m
 //	MSG_WAITALL
 //	Attempt to fill the read buffer.
 	msg.msg_flags = 0;
-	len = kernel_sendmsg(sk, &msg, &vec, 1, ETH_FRAME_LEN);
+	len = kernel_sendmsg(sk, &msg, &vec, 1, vec.iov_len);
 	printk(KERN_INFO "sendmsg ret = %d\n", len);
 
 	// close the socket
@@ -248,7 +253,7 @@ int init_module(void) {
 	unsigned char dest_mac[ETH_ALEN] = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 };
 	unsigned char message[] = "hello there";
 	unsigned char buff[ETH_DATA_LEN];
-	nc_sendmsg(src_mac, dest_mac, message, sizeof(message));
+	nc_sendmsg(src_mac, dest_mac, message, sizeof(message)/sizeof(unsigned char));
 //	nc_rcvmsg(buff, ETH_DATA_LEN);
 	printk(KERN_INFO "End init...\n");
 	return 0;
