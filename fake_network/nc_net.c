@@ -135,13 +135,18 @@ void run_tests(void) {
 	printk(KERN_INFO "receiving: %llu", msg_rx);
 }
 
+
+// channels
+
+
+
 #define NET_DEVICE_NAME "eth0" // "wlan0" // "eth0"  //sometimes enp0s3
 
 int nc_rcv(unsigned char *buffer, int length) {
 	struct socket *sk = NULL;
 	int i, ret, j;
 	struct msghdr msg;
-	struct kvec vec;
+	struct kvec vec = {buffer, length};
 
 	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
 	if (ret < 0) {
