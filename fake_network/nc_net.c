@@ -137,10 +137,8 @@ void run_tests(void) {
 
 #define NET_DEVICE_NAME "eth0" // "wlan0" // "eth0"  //sometimes enp0s3
 
-int network_rcv_test(void) {
+int nc_rcv(unsigned char *buffer, int length) {
 	struct socket *sk = NULL;
-	char buffer[ETH_FRAME_LEN]; /*Buffer for ethernet frame*/
-	int length = 0; /*length of the received frame*/
 	int i, ret, j;
 	struct msghdr msg;
 	struct kvec vec;
@@ -151,13 +149,15 @@ int network_rcv_test(void) {
 		return -1;
 	}
 
-	length = kernel_recvmsg(sk, &msg, &vec, 1, ETH_FRAME_LEN, MSG_DONTWAIT);
+	length = kernel_recvmsg(sk, &msg, &vec, 1, ETH_FRAME_LEN, 0/*MSG_DONTWAIT*/);
 	printk(KERN_INFO "received length: %i", length);
 	for (i = 0; i < length; i++) {
 		printk(KERN_INFO "received: %c", buffer[i]);
+		return -1;
 	}
 	if (length == -1) {
 		printk(KERN_INFO "Failed to receive message.");
+		return -1;
 	}
 	// close the socket
 	ret = sk->ops->release(sk);
@@ -168,7 +168,7 @@ int network_rcv_test(void) {
 	return 0;
 }
 
-int network_send_test(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *message, int length) {
+int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *message, int length) {
 
 	struct net_device* dev;
 	int i,  ifindex, ret, send_result, len;
@@ -276,8 +276,9 @@ int init_module(void) {
 	unsigned char src_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5C };
 	unsigned char dest_mac[ETH_ALEN] = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 };
 	unsigned char message[] = "hello there";
-	network_send_test(src_mac, dest_mac, message, sizeof(message));
-	network_rcv_test();
+	unsigned char buff[ETH_DATA_LEN];
+	nc_sendmsg(src_mac, dest_mac, message, sizeof(message));
+	nc_rcv(buff, ETH_DATA_LEN);
 	printk(KERN_INFO "End init...\n");
 	return 0;
 }
