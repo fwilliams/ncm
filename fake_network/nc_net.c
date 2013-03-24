@@ -10,23 +10,9 @@
 #include <linux/socket.h>
 #include <net/arp.h>
 #include <linux/syscalls.h>
+#include <linux/kthread.h>
 #include "nc_net.h"
 
-
-
-/*
- *
- * TODO in a receiving thread
- *
-	unsigned char buff[ETH_DATA_LEN];
-	int status;
-	status = nc_rcvmsg(buff, ETH_DATA_LEN);
- *
-	struct nc_message *tmp;
-	tmp = (struct nc_message *) kmalloc(sizeof(struct nc_message), GFP_KERNEL);
-	tmp->value = *msg;
-	list_add(&(tmp->list), &(chan->message_queue.list));
- * */
 
 
 unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
@@ -36,10 +22,37 @@ unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
 struct nc_channel channels[] = {
 	{
 		{ {0,0}, /* kernel's list structure */ 0,/*message*/ 0/*length*/ },
-		{ 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
+//		{ 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
+		{ 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // send to yourself, vm.
 	}
 };
 
+void receiving_threadfn(void* data){
+	unsigned char buff[ETH_DATA_LEN];
+	int length;
+	int channel = (int) data;
+	while(true){
+		length = nc_rcvmsg(buff, ETH_DATA_LEN);
+		printk(KERN_EMERG "received... (status: %i)", length);
+		if(length < 0){
+			printk(KERN_INFO "Failed to receive packet (status: %i)", length);
+		}
+
+		struct nc_message *tmp;
+		tmp = (struct nc_message *) kmalloc(sizeof(struct nc_message), GFP_KERNEL);
+		memcpy(tmp->value, buff, length);
+		tmp->length = length;
+		list_add(&(tmp->list), &(channels[channel].message_queue.list));
+	}
+}
+
+void start_receiving(int channel){
+	channels[channel].receiving_thread = kthread_run(receiving_threadfn, (void*) channel, "NCM interpreter");
+}
+
+void stop_receiving(int channel) {
+	kthread_stop(channels[channel].receiving_thread);
+}
 
 void init_nc_channel(struct nc_channel *chan) {
 	INIT_LIST_HEAD(&chan->message_queue.list);
@@ -119,11 +132,12 @@ int nc_rcvmsg(unsigned char *buffer, int length) {
 		return -1;
 	}
 
-	length = kernel_recvmsg(sk, &msg, &vec, 1, ETH_FRAME_LEN, 0/*MSG_DONTWAIT*/);
+	printk(KERN_EMERG "before...");
+	length = kernel_recvmsg(sk, &msg, &vec, 1, length, 0/*MSG_DONTWAIT*/);
+	printk(KERN_EMERG "after...");
 	printk(KERN_INFO "received length: %i", length);
 	for (i = 0; i < length; i++) {
 		printk(KERN_INFO "received: %c", buffer[i]);
-		return -1;
 	}
 	if (length == -1) {
 		printk(KERN_INFO "Failed to receive message.");
@@ -135,7 +149,7 @@ int nc_rcvmsg(unsigned char *buffer, int length) {
 
 	if (sk)
 		sock_release(sk);
-	return 0;
+	return length;
 }
 
 int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *message, int length) {
@@ -250,12 +264,15 @@ int init_module(void) {
 	printk(KERN_INFO "Start init...\n");
 	for(i = 0; i < NUM_CHANNELS; i++){
 		init_nc_channel(&channels[i]);
+		start_receiving(i);
 	}
 	unsigned char message[] = "hello there";
 	unsigned char buff[ETH_DATA_LEN];
 	nc_channel_send(0, message, sizeof(message)/sizeof(unsigned char));
 	nc_channel_receive(0, 0);
-//	nc_rcvmsg(buff, ETH_DATA_LEN);
+	for(i = 0; i < NUM_CHANNELS; i++){
+		stop_receiving(i);
+	}
 	printk(KERN_INFO "End init...\n");
 	return 0;
 }
