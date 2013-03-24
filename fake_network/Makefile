@@ -6,9 +6,9 @@ else
 
 MODNAME=nc_net
 # for laptop
-KDIR ?= /usr/src/linux-headers-3.5.0-23-generic 
+# KDIR ?= /usr/src/linux-headers-3.5.0-23-generic 
 # for vm
-# KDIR ?= /usr/src/linux-3.6.11-rt
+KDIR ?= /usr/src/linux-3.6.11-rt
 
 all: build
 build:
