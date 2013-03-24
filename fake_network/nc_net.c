@@ -36,7 +36,7 @@ unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
 struct nc_channel channels[] = {
 	{
 		{ {0,0}, /* kernel's list structure */ 0,/*message*/ 0/*length*/ },
-		{ 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } /*mac address*/
+		{ 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
 	}
 };
 
@@ -56,10 +56,15 @@ int nc_channel_send(int chan, unsigned char *msg, int length) {
 int nc_channel_receive(int chan, int var_id) {
 	struct nc_channel *channel = &channels[chan];
 
+	if(list_empty(&channel->message_queue.list)){
+		return -1;
+	}
 	// pop the first message off the queue
-	struct nc_message *nc_msg =
-			list_first_entry(&channel->message_queue.list, struct nc_message, list);
+	struct nc_message *nc_msg = list_first_entry(&channel->message_queue.list, struct nc_message, list);
 
+	if(!nc_msg){
+		return -1;
+	}
 	// TODO: read value from nc_msg->value of length nc_msg->length into variable var_id
 
 	// delete the message from the queue
@@ -246,14 +251,10 @@ int init_module(void) {
 	for(i = 0; i < NUM_CHANNELS; i++){
 		init_nc_channel(&channels[i]);
 	}
-//	unsigned char message[] = "hello there";
-//	unsigned char buff[ETH_DATA_LEN];
-//	nc_channel_send(0, message, sizeof(message));
-	unsigned char src_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5C };
-	unsigned char dest_mac[ETH_ALEN] = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 };
 	unsigned char message[] = "hello there";
 	unsigned char buff[ETH_DATA_LEN];
-	nc_sendmsg(src_mac, dest_mac, message, sizeof(message)/sizeof(unsigned char));
+	nc_channel_send(0, message, sizeof(message)/sizeof(unsigned char));
+	nc_channel_receive(0, 0);
 //	nc_rcvmsg(buff, ETH_DATA_LEN);
 	printk(KERN_INFO "End init...\n");
 	return 0;
