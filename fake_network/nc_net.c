@@ -167,7 +167,7 @@ int receiving_threadfn(void* data) {
 
 void start_receiving(void) {
 	receiving_thread =
-			kthread_run(receiving_threadfn, (void*) 0, "NCM interpreter");
+			kthread_run(receiving_threadfn, (void*) 0, "NCM network thread");
 }
 
 void stop_receiving(void) {
