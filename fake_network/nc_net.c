@@ -15,45 +15,44 @@
 #include <linux/completion.h>
 #include "nc_net.h"
 
-
 // the interface to send on
 #define NET_DEVICE_NAME "eth0" // "wlan0" // "eth0"  //sometimes enp0s3
-
 unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
 
 #define NUM_CHANNELS sizeof(channels) / sizeof(struct nc_channel)
 
-struct nc_channel channels[] = {
-	{
+struct nc_channel channels[] = { {
 //		.mac = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
 		.mac = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // send to yourself, vm.
 //		.mac = { 0x0a, 0x00, 0x27, 0x00, 0x00, 0x00 } // virtual interaface laptop address
-	}
-};
+} };
 
 // network code ethernet protocol type
 #define ETH_P_NC	0x9009
 
-int receiving_threadfn(void* data){
+int receiving_threadfn(void* data) {
 	unsigned char buff[ETH_DATA_LEN];
 	int length;
 	int chan = (int) data;
 	struct nc_channel *channel = &channels[chan];
 	struct nc_message *tmp;
 
-	while(!kthread_should_stop()){
+	while (!kthread_should_stop()) {
 		length = nc_rcvmsg(buff, ETH_DATA_LEN);
 		printk(KERN_INFO "received... (status: %i)", length);
-		if(length < 0){
+		if (length < 0) {
 			printk(KERN_INFO "Failed to receive packet (status: %i)", length);
 			continue;
 		}
-		if(kthread_should_stop()) return -1;
+		if (kthread_should_stop())
+			return -1;
 
 		// check if it's from the right target and has the right type
-		if(memcmp(channel->mac, ((struct ethhdr*)buff)->h_source, ETH_ALEN) == 0 && ((struct ethhdr*)buff)->h_proto == ETH_P_NC){
+		if (memcmp(channel->mac, ((struct ethhdr*) buff)->h_source, ETH_ALEN)
+				== 0 && ((struct ethhdr*) buff)->h_proto == ETH_P_NC) {
 			printk(KERN_INFO "received message: %s", buff);
-			tmp = (struct nc_message *) kmalloc(sizeof(struct nc_message), GFP_KERNEL);
+			tmp = (struct nc_message *) kmalloc(sizeof(struct nc_message),
+					GFP_KERNEL);
 			memcpy(tmp->value, buff, length);
 			tmp->length = length;
 
@@ -67,8 +66,9 @@ int receiving_threadfn(void* data){
 	return 0;
 }
 
-void start_receiving(int channel){
-	channels[channel].receiving_thread = kthread_run(receiving_threadfn, (void*) channel, "NCM interpreter");
+void start_receiving(int channel) {
+	channels[channel].receiving_thread =
+			kthread_run(receiving_threadfn, (void*) channel, "NCM interpreter");
 }
 
 void stop_receiving(int channel) {
@@ -82,7 +82,7 @@ void init_nc_channel(struct nc_channel *chan) {
 
 int nc_channel_send(int chan, unsigned char *msg, int length) {
 	struct nc_channel *channel = &channels[chan];
-	if(length > ETH_DATA_LEN){
+	if (length > ETH_DATA_LEN) {
 		return -1;
 	}
 	return nc_sendmsg(our_mac, channel->mac, msg, length);
@@ -97,16 +97,17 @@ int nc_channel_receive(int chan, int var_id) {
 	empty = list_empty(&channel->message_queue.list);
 	spin_unlock(&channel->lock);
 
-	if(empty){
+	if (empty) {
 		printk(KERN_INFO "Receive queue empty. Cannot recevie.");
 		return -1;
 	}
 	// read the first message off the queue
 	spin_lock(&channel->lock);
-	nc_msg = list_first_entry(&channel->message_queue.list, struct nc_message, list);
+	nc_msg =
+			list_first_entry(&channel->message_queue.list, struct nc_message, list);
 	spin_unlock(&channel->lock);
 
-	if(!nc_msg){
+	if (!nc_msg) {
 		return -1;
 	}
 
@@ -121,15 +122,13 @@ int nc_channel_receive(int chan, int var_id) {
 	return 0;
 }
 
-
-
 int nc_rcvmsg(unsigned char *buffer, int length) {
 	struct socket *sk = NULL;
 	int ret;
 	struct msghdr msg;
 	char addrbuf[6];
 	char controlbuf[20];
-	struct kvec vec = {buffer, length};
+	struct kvec vec = { buffer, length };
 
 	/*test*/
 	memset(&msg, 0, sizeof(msg));
@@ -165,10 +164,11 @@ int nc_rcvmsg(unsigned char *buffer, int length) {
 	return length;
 }
 
-int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *message, int length) {
+int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac,
+		unsigned char *message, int length) {
 
 	struct net_device* dev;
-	int i,  ifindex, ret, len;
+	int i, ifindex, ret, len;
 	struct socket *sk = NULL;
 	struct msghdr msg;
 	char buffer[length + ETH_HLEN];
@@ -182,11 +182,14 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *m
 	/* destination*/
 	struct sockaddr_ll socket_address;
 
-	if(length > ETH_DATA_LEN){
+	if (length > ETH_DATA_LEN) {
 		return -1;
 	}
 
 	dev = dev_get_by_name(&init_net, NET_DEVICE_NAME);
+	if (dev == 0) {
+		printk(KERN_INFO "failed to find network device\n");
+	}
 	ifindex = dev->ifindex;
 	dev_put(dev);
 	printk(KERN_INFO "ifindex = %d\n", ifindex);
@@ -237,7 +240,7 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *m
 
 	vec.iov_base = (void *) buffer;
 
-	vec.iov_len = length + ETH_HLEN;//ETH_FRAME_LEN;
+	vec.iov_len = length + ETH_HLEN; //ETH_FRAME_LEN;
 
 	msg.msg_name = &socket_address;
 	msg.msg_namelen = sizeof(socket_address);
@@ -277,11 +280,11 @@ int init_module(void) {
 	unsigned char message[] = "hello there";
 
 	printk(KERN_INFO "Start init...\n");
-	for(i = 0; i < NUM_CHANNELS; i++){
+	for (i = 0; i < NUM_CHANNELS; i++) {
 		init_nc_channel(&channels[i]);
 		start_receiving(i);
 	}
-	nc_channel_send(0, message, sizeof(message)/sizeof(unsigned char));
+	nc_channel_send(0, message, sizeof(message) / sizeof(unsigned char));
 	printk(KERN_INFO "End init...\n");
 	return 0;
 }
@@ -289,7 +292,7 @@ int init_module(void) {
 void cleanup_module(void) {
 	int i;
 	nc_channel_receive(0, 0);
-	for(i = 0; i < NUM_CHANNELS; i++){
+	for (i = 0; i < NUM_CHANNELS; i++) {
 		stop_receiving(i);
 	}
 	printk(KERN_INFO "Goodbye world 1.\n");
