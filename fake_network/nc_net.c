@@ -32,50 +32,41 @@ struct nc_channel channels[] = { {
 // network code ethernet protocol type
 #define ETH_P_NC	0x9009
 
-int nc_rcvmsg(struct nc_message *nc_msg) {
-	struct socket *sk = NULL;
-	int ret;
+int nc_rcvmsg(struct nc_message *nc_msg, struct socket *sk) {
 	struct msghdr msg;
-	char addrbuf[6];
-	char controlbuf[20];
 	struct kvec vec;
 	int length;
 
-	vec.iov_base = nc_msg->value;
+	//necessary preparation
+	vec.iov_base = &nc_msg->value;
 	vec.iov_len = sizeof(nc_msg->value);
-
-	/*test*/
 	memset(&msg, 0, sizeof(msg));
-	msg.msg_name = addrbuf;
-	msg.msg_namelen = sizeof(addrbuf);
 	msg.msg_iov = &vec;
 	msg.msg_iovlen = 1;
-	msg.msg_control = controlbuf;
-	msg.msg_controllen = sizeof(controlbuf);
-	/*test*/
+	// after the message is received, the iov_base pointer moves forward to the end of the message
+//	printk(KERN_INFO "msg0: %i", vec.iov_base);
 
-	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
-	if (ret < 0) {
-		printk(KERN_INFO "sock_create failed");
-		return -1;
-	}
-
-	//set a timeout!
-	sk->sk->sk_rcvtimeo = 1000; // this seems to be about 2-3 seconds
 	length = kernel_recvmsg(sk, &msg, &vec, 1, vec.iov_len, 0/*MSG_DONTWAIT*/);
 	printk(KERN_INFO "received length: %i", length);
 	printk(KERN_INFO "test length: %i", vec.iov_len);
 
-	if (length == -1) {
+	if (length < 0) {
 		printk(KERN_INFO "Failed to receive message.");
+	} else {
+//		printk(KERN_INFO "msg1: %i", vec.iov_base);
+//		printk(KERN_INFO "msg2: %i", nc_msg->value);
+//		printk(KERN_INFO "msg3: %s", (char*)vec.iov_base);
+//		printk(KERN_INFO "msg4: %s", (char*)nc_msg->value+0x40);
+
+		// only consider the receipt a success if it matches our protocol
+		if(((struct ethhdr*) nc_msg->value)->h_proto != ETH_P_NC){
+			length = -1;
+		} else {
+			nc_msg->length = length;
+		}
 	}
-	// close the socket
-	sock_release(sk);
 
-	nc_msg->length = length;
-
-	// only consider the receipt a success if it matches our protocol
-	return ((struct ethhdr*) nc_msg->value)->h_proto == ETH_P_NC ? length : -1;
+	return length;
 }
 
 int nc_channel_receive(int chan, int var_id) {
@@ -88,7 +79,7 @@ int nc_channel_receive(int chan, int var_id) {
 	spin_unlock(&channel->lock);
 
 	if (empty) {
-		printk(KERN_INFO "Receive queue empty. Cannot recevie.");
+		printk(KERN_INFO "Receive queue empty. Cannot receive.");
 		return -1;
 	}
 	// read the first message off the queue
@@ -114,16 +105,24 @@ int nc_channel_receive(int chan, int var_id) {
 
 
 int receiving_threadfn(void* data) {
-	int length, chan, found_channel;
+	int length, chan, found_channel, ret;
 	struct nc_channel *channel;
 	struct nc_message *nc_msg;
+	struct socket *sk;
+
+	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
+	if (ret < 0) {
+		printk(KERN_INFO "sock_create failed");
+		return -1;
+	}
+	sk->sk->sk_rcvtimeo = 1000; // this seems to be about 2-3 seconds
 
 	// get a message buffer ready for the first arrival
 	nc_msg = (struct nc_message *) kmalloc(sizeof(struct nc_message),
 			GFP_KERNEL);
 
 	while (!kthread_should_stop()) {
-		length = nc_rcvmsg(nc_msg);
+		length = nc_rcvmsg(nc_msg, sk);
 		printk(KERN_INFO "received... (status: %i)", length);
 		if (length < 0) {
 			printk(KERN_INFO "Failed to receive packet (status: %i)", length);
@@ -156,6 +155,8 @@ int receiving_threadfn(void* data) {
 	}
 	// release the message buffer
 	kfree(nc_msg);
+	// close the socket
+	sock_release(sk);
 	return 0;
 }
 
