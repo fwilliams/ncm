@@ -247,6 +247,7 @@ int start_interpreter(struct interpreter* interpreter, struct netcode_instr* pro
 	interpreter->program = prog;
 	init_future_queue(&interpreter->future_queue);
 	init_variable_space(&interpreter->variable_space);
+	init_network(&interpreter->network);
 	interpreter->thread = kthread_run(interpreter_threadfn, (void*) interpreter, "NCM interpreter");
 	return 0;
 }
@@ -256,6 +257,7 @@ int start_interpreter(struct interpreter* interpreter, struct netcode_instr* pro
  */
 int stop_interpreter(struct interpreter* interpreter) {
 	kthread_stop(interpreter->thread);
+	destroy_network(&interpreter->network);
 	return 0;
 }
 

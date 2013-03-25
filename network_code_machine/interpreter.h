@@ -12,6 +12,7 @@
 #include "future_queue.h"
 #include "variable_space.h"
 #include "counter.h"
+#include "nc_net.h"
 
 #ifndef INTERPRETER_H_
 #define INTERPRETER_H_
@@ -65,6 +66,7 @@ struct interpreter {
 	struct future_queue		future_queue;		/* The future queue */
 	varspace_t				variable_space;		/* The variable space */
 	counter_array_t			counters;			/* Array of counters */
+	ncm_network_t			network;			/* NCM network abstraction */
 };
 
 /*

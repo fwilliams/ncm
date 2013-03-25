@@ -2,9 +2,15 @@
 #include <linux/list.h>
 #include <linux/if_ether.h>
 
+#ifndef NC_NET_H_
+#define NC_NET_H_
+
 #ifndef MAX_CHANNELS
 #define MAX_CHANNELS 3
 #endif
+
+// network code ethernet protocol type
+#define ETH_P_NC	0x9009
 
 typedef struct nc_message {
 	struct list_head 	list; 					/* kernel's list structure */
@@ -18,18 +24,17 @@ typedef struct nc_channel {
 	spinlock_t 		lock;
 } nc_channel_t;
 
-typedef struct nc_chan_array {
-	nc_channel_t 	at[MAX_CHANNELS];
-} nc_channel_array_t;
+typedef struct ncm_network {
+	nc_channel_t 		at[MAX_CHANNELS];
+	struct task_struct* receiving_thread;
+} ncm_network_t;
 
-void init_nc_channel_array(nc_channel_array_t* chan_array);
+void init_network(ncm_network_t* ncm_net);
 
-void destroy_nc_channel_array(nc_channel_array_t* chan_array);
+void destroy_network(ncm_network_t* ncm_net);
 
-int nc_channel_send(nc_channel_array_t* chan_array, u32 chan, u8 *msg, u32 length);
+int ncm_send(ncm_network_t* ncm_net, u32 chan, u8 *msg, u32 length);
 
-int nc_channel_receive(nc_channel_array_t* chan_array, u32 chan, u32 var_id);
+int ncm_receive(ncm_network_t* ncm_net, u32 chan, u32 var_id);
 
-void start_receiving();
-
-void stop_receiving();
+#endif /* NC_NET_H_ */
