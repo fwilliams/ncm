@@ -59,7 +59,7 @@ int nc_rcvmsg(struct nc_message *nc_msg, struct socket *sk) {
 //		printk(KERN_INFO "msg1: %i", vec.iov_base);
 //		printk(KERN_INFO "msg2: %i", nc_msg->value);
 //		printk(KERN_INFO "msg3: %s", (char*)vec.iov_base);
-//		printk(KERN_INFO "msg4: %s", (char*)nc_msg->value+0x40);
+		printk(KERN_INFO "msg4: %s", (char*)nc_msg->value+ETH_HLEN);
 
 		// only consider the receipt a success if it matches our protocol
 		if(((struct ethhdr*) nc_msg->value)->h_proto != ETH_P_NC){
@@ -140,10 +140,11 @@ int receiving_threadfn(void* data) {
 		found_channel = 0;
 		for(chan = 0; chan < sizeof(channels)/sizeof(struct nc_channel); chan++){
 			channel = &channels[chan];
+
 			if (memcmp(channel->mac, ((struct ethhdr*) nc_msg->value)->h_source, ETH_ALEN)
 					== 0) {
 				found_channel = 1;
-				printk(KERN_INFO "received message: %s", nc_msg->value);
+				printk(KERN_INFO "received message: %s", nc_msg->value + ETH_HLEN);
 
 				spin_lock(&channel->lock);
 				list_add(&(nc_msg->list), &(channel->message_queue.list));
