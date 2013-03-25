@@ -14,9 +14,13 @@ all: build
 build:
 	make -C $(KDIR) M=$$PWD modules
 install: build
+	sync
 	insmod $(MODNAME).ko
+	sync
 uninstall:
+	sync
 	rmmod $(MODNAME)
+	sync
 test:build
 	sync
 	make install

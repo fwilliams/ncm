@@ -12,6 +12,7 @@ struct nc_channel {
   struct nc_message message_queue;
   unsigned char mac[ETH_ALEN];
   struct task_struct*	receiving_thread;
+  spinlock_t lock;
 };
 
 void init_nc_channel(struct nc_channel *chan);

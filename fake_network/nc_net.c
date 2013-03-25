@@ -25,10 +25,9 @@ unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
 
 struct nc_channel channels[] = {
 	{
-		{ {0,0}, /* kernel's list structure */ 0,/*message*/ 0/*length*/ },
-//		{ 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
-		{ 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // send to yourself, vm.
-//		{ 0x0a, 0x00, 0x27, 0x00, 0x00, 0x00 } // virtual interaface laptop address
+//		.mac = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
+		.mac = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // send to yourself, vm.
+//		.mac = { 0x0a, 0x00, 0x27, 0x00, 0x00, 0x00 } // virtual interaface laptop address
 	}
 };
 
@@ -38,7 +37,9 @@ struct nc_channel channels[] = {
 int receiving_threadfn(void* data){
 	unsigned char buff[ETH_DATA_LEN];
 	int length;
-	int channel = (int) data;
+	int chan = (int) data;
+	struct nc_channel *channel = &channels[chan];
+	struct nc_message *tmp;
 
 	while(!kthread_should_stop()){
 		length = nc_rcvmsg(buff, ETH_DATA_LEN);
@@ -50,13 +51,15 @@ int receiving_threadfn(void* data){
 		if(kthread_should_stop()) return -1;
 
 		// check if it's from the right target and has the right type
-		if(memcmp(channels[channel].mac, ((struct ethhdr*)buff)->h_source, ETH_ALEN) == 0 && ((struct ethhdr*)buff)->h_proto == ETH_P_NC){
+		if(memcmp(channel->mac, ((struct ethhdr*)buff)->h_source, ETH_ALEN) == 0 && ((struct ethhdr*)buff)->h_proto == ETH_P_NC){
 			printk(KERN_INFO "received message: %s", buff);
-			struct nc_message *tmp;
 			tmp = (struct nc_message *) kmalloc(sizeof(struct nc_message), GFP_KERNEL);
 			memcpy(tmp->value, buff, length);
 			tmp->length = length;
-			list_add(&(tmp->list), &(channels[channel].message_queue.list));
+
+			spin_lock(&channel->lock);
+			list_add(&(tmp->list), &(channel->message_queue.list));
+			spin_unlock(&channel->lock);
 		} else {
 			printk(KERN_INFO "rejected message: %s", buff);
 		}
@@ -73,6 +76,7 @@ void stop_receiving(int channel) {
 }
 
 void init_nc_channel(struct nc_channel *chan) {
+	spin_lock_init(&chan->lock);
 	INIT_LIST_HEAD(&chan->message_queue.list);
 }
 
@@ -81,18 +85,26 @@ int nc_channel_send(int chan, unsigned char *msg, int length) {
 	if(length > ETH_DATA_LEN){
 		return -1;
 	}
-	return nc_sendmsg(&our_mac, &channel->mac, msg, length);
+	return nc_sendmsg(our_mac, channel->mac, msg, length);
 }
 
 int nc_channel_receive(int chan, int var_id) {
 	struct nc_channel *channel = &channels[chan];
+	int empty;
+	struct nc_message *nc_msg;
 
-	if(list_empty(&channel->message_queue.list)){
+	spin_lock(&channel->lock);
+	empty = list_empty(&channel->message_queue.list);
+	spin_unlock(&channel->lock);
+
+	if(empty){
 		printk(KERN_INFO "Receive queue empty. Cannot recevie.");
 		return -1;
 	}
-	// pop the first message off the queue
-	struct nc_message *nc_msg = list_first_entry(&channel->message_queue.list, struct nc_message, list);
+	// read the first message off the queue
+	spin_lock(&channel->lock);
+	nc_msg = list_first_entry(&channel->message_queue.list, struct nc_message, list);
+	spin_unlock(&channel->lock);
 
 	if(!nc_msg){
 		return -1;
@@ -102,7 +114,9 @@ int nc_channel_receive(int chan, int var_id) {
 	printk(KERN_INFO "RECEIVED: %s", nc_msg->value);
 
 	// delete the message from the queue
+	spin_lock(&channel->lock);
 	list_del(&nc_msg->list);
+	spin_unlock(&channel->lock);
 	kfree(nc_msg);
 	return 0;
 }
@@ -111,7 +125,7 @@ int nc_channel_receive(int chan, int var_id) {
 
 int nc_rcvmsg(unsigned char *buffer, int length) {
 	struct socket *sk = NULL;
-	int i, ret, j;
+	int ret;
 	struct msghdr msg;
 	char addrbuf[6];
 	char controlbuf[20];
@@ -154,9 +168,10 @@ int nc_rcvmsg(unsigned char *buffer, int length) {
 int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *message, int length) {
 
 	struct net_device* dev;
-	int i,  ifindex, ret, send_result, len;
+	int i,  ifindex, ret, len;
 	struct socket *sk = NULL;
 	struct msghdr msg;
+	char buffer[length + ETH_HLEN];
 	struct kvec vec;
 	/*pointer to ethenet header*/
 	unsigned char* etherhead;
@@ -170,7 +185,6 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *m
 	if(length > ETH_DATA_LEN){
 		return -1;
 	}
-	char buffer[length + ETH_HLEN];
 
 	dev = dev_get_by_name(&init_net, NET_DEVICE_NAME);
 	ifindex = dev->ifindex;
@@ -260,13 +274,13 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *m
 
 int init_module(void) {
 	int i;
+	unsigned char message[] = "hello there";
+
 	printk(KERN_INFO "Start init...\n");
 	for(i = 0; i < NUM_CHANNELS; i++){
 		init_nc_channel(&channels[i]);
 		start_receiving(i);
 	}
-	unsigned char message[] = "hello there";
-	unsigned char buff[ETH_DATA_LEN];
 	nc_channel_send(0, message, sizeof(message)/sizeof(unsigned char));
 	printk(KERN_INFO "End init...\n");
 	return 0;
