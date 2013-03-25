@@ -13,7 +13,7 @@ KDIR ?= /usr/src/linux-3.6.11-rt
 all: build
 build:
 	make -C $(KDIR) M=$$PWD modules
-install: build
+install: 
 	sync
 	insmod $(MODNAME).ko
 	sync

@@ -16,8 +16,10 @@
 #include "nc_net.h"
 
 // the interface to send on
-#define NET_DEVICE_NAME "eth0" // "wlan0" // "eth0"  //sometimes enp0s3
-unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
+#define NET_DEVICE_NAME "enp0s3" // "wlan0" // "eth0"  //sometimes enp0s3
+
+unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };// original vm
+//unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xCf, 0x5c, 0xD7 };// clone vm
 
 #define NUM_CHANNELS sizeof(channels) / sizeof(struct nc_channel)
 
@@ -25,7 +27,8 @@ struct task_struct* receiving_thread;
 
 struct nc_channel channels[] = { {
 //		.mac = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
-		.mac = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // send to yourself, vm.
+//		.mac = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // original vm
+		.mac = { 0x08, 0x00, 0x27, 0xCf, 0x5c, 0xD7 } // clone vm
 //		.mac = { 0x0a, 0x00, 0x27, 0x00, 0x00, 0x00 } // virtual interaface laptop address
 } };
 
@@ -93,7 +96,7 @@ int nc_channel_receive(int chan, int var_id) {
 	}
 
 	// TODO: read value from nc_msg->value of length nc_msg->length into variable var_id
-	printk(KERN_INFO "RECEIVED: %s", nc_msg->value);
+	printk(KERN_INFO "RECEIVED: %s", nc_msg->value+ETH_HLEN);
 
 	// delete the message from the queue
 	spin_lock(&channel->lock);
