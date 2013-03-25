@@ -4,7 +4,6 @@
 #include <linux/module.h>	/* Needed by all modules */
 #include <linux/kernel.h>	/* Needed for KERN_INFO */
 #include <net/net_namespace.h>
-// #include <linux/netdevice.h>
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/socket.h>
@@ -13,7 +12,9 @@
 #include <net/arp.h>
 #include <linux/kthread.h>
 #include <linux/completion.h>
+
 #include "nc_net.h"
+#include "netcode_helper.h"
 
 // the interface to send on
 #define NET_DEVICE_NAME "enp0s3" // "wlan0" // "eth0"  //sometimes enp0s3
@@ -57,12 +58,12 @@ static int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac,
 
 	dev = dev_get_by_name(&init_net, NET_DEVICE_NAME);
 	if (dev == 0) {
-		printk(KERN_WARNING "failed to find network device\n");
+		debug_print(KERN_WARNING "failed to find network device\n");
 		return -1;
 	}
 	ifindex = dev->ifindex;
 	dev_put(dev);
-	printk(KERN_INFO "ifindex = %d\n", ifindex);
+	debug_print(KERN_INFO "ifindex = %d\n", ifindex);
 
 	etherhead = buffer;
 	data = buffer + ETH_HLEN;
@@ -70,7 +71,7 @@ static int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac,
 
 	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
 	if (ret < 0) {
-		printk(KERN_INFO "sock_create failed");
+		debug_print(KERN_INFO "sock_create failed");
 		return -1;
 	}
 
@@ -134,7 +135,7 @@ static int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac,
 //	Attempt to fill the read buffer.
 	msg.msg_flags = 0;
 	len = kernel_sendmsg(sk, &msg, &vec, 1, vec.iov_len);
-	printk(KERN_INFO "sendmsg ret = %d\n", len);
+	debug_print(KERN_INFO "sendmsg ret = %d\n", len);
 
 	// close the socket
 	sock_release(sk);
@@ -153,19 +154,19 @@ static int nc_rcvmsg(struct nc_message *nc_msg, struct socket *sk) {
 	msg.msg_iov = (struct iovec*) &vec;
 	msg.msg_iovlen = 1;
 	// after the message is received, the iov_base pointer moves forward to the end of the message
-//	printk(KERN_INFO "msg0: %i", vec.iov_base);
+//	debug_print(KERN_INFO "msg0: %i", vec.iov_base);
 
 	length = kernel_recvmsg(sk, &msg, &vec, 1, vec.iov_len, 0/*MSG_DONTWAIT*/);
-	printk(KERN_INFO "received length: %i", length);
-	printk(KERN_INFO "test length: %i", vec.iov_len);
+	debug_print(KERN_INFO "received length: %i", length);
+	debug_print(KERN_INFO "test length: %i", vec.iov_len);
 
 	if (length < 0) {
-		printk(KERN_INFO "Failed to receive message.");
+		debug_print(KERN_INFO "Failed to receive message.");
 	} else {
-//		printk(KERN_INFO "msg1: %i", vec.iov_base);
-//		printk(KERN_INFO "msg2: %i", nc_msg->value);
-//		printk(KERN_INFO "msg3: %s", (char*)vec.iov_base);
-		printk(KERN_INFO "msg4: %s", (char*)nc_msg->value+ETH_HLEN);
+//		debug_print(KERN_INFO "msg1: %i", vec.iov_base);
+//		debug_print(KERN_INFO "msg2: %i", nc_msg->value);
+//		debug_print(KERN_INFO "msg3: %s", (char*)vec.iov_base);
+		debug_print(KERN_INFO "msg4: %s", (char*)nc_msg->value+ETH_HLEN);
 
 		// only consider the receipt a success if it matches our protocol
 		if(((struct ethhdr*) nc_msg->value)->h_proto != ETH_P_NC){
@@ -187,7 +188,7 @@ static int receiving_threadfn(void* data) {
 
 	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
 	if (ret < 0) {
-		printk(KERN_INFO "sock_create failed");
+		debug_print(KERN_INFO "sock_create failed");
 		return -1;
 	}
 	// decreasing this value decreases long it takes in the worst case to unload the module
@@ -200,9 +201,9 @@ static int receiving_threadfn(void* data) {
 
 	while (!kthread_should_stop()) {
 		length = nc_rcvmsg(nc_msg, sk);
-		printk(KERN_INFO "received... (status: %i)", length);
+		debug_print(KERN_INFO "received... (status: %i)", length);
 		if (length < 0) {
-			printk(KERN_INFO "Failed to receive packet (status: %i)", length);
+			debug_print(KERN_INFO "Failed to receive packet (status: %i)", length);
 			continue;
 		}
 		if (kthread_should_stop())
@@ -216,7 +217,7 @@ static int receiving_threadfn(void* data) {
 			if (memcmp(channel->mac, ((struct ethhdr*) nc_msg->value)->h_source, ETH_ALEN)
 					== 0) {
 				found_channel = 1;
-				printk(KERN_INFO "received message: %s", nc_msg->value + ETH_HLEN);
+				debug_print(KERN_INFO "received message: %s", nc_msg->value + ETH_HLEN);
 
 				spin_lock(&channel->lock);
 				list_add(&(nc_msg->list), &(channel->message_queue.list));
@@ -228,7 +229,7 @@ static int receiving_threadfn(void* data) {
 			}
 		}
 		if(found_channel == 0){
-			printk(KERN_INFO "rejected message: %s", nc_msg->value);
+			debug_print(KERN_INFO "rejected message: %s", nc_msg->value);
 		}
 	}
 	// release the message buffer
@@ -249,7 +250,7 @@ int ncm_receive(ncm_network_t* ncm_net, u32 chan, u32 var_id) {
 	spin_unlock(&channel->lock);
 
 	if (empty) {
-		printk(KERN_INFO "Receive queue empty. Cannot receive.");
+		debug_print(KERN_INFO "Receive queue empty. Cannot receive.");
 		return -1;
 	}
 	// read the first message off the queue
@@ -263,7 +264,7 @@ int ncm_receive(ncm_network_t* ncm_net, u32 chan, u32 var_id) {
 	}
 
 	// TODO: read value from nc_msg->value of length nc_msg->length into variable var_id
-	printk(KERN_INFO "RECEIVED: %s", nc_msg->value+ETH_HLEN);
+	debug_print(KERN_INFO "RECEIVED: %s", nc_msg->value+ETH_HLEN);
 
 	// delete the message from the queue
 	spin_lock(&channel->lock);
@@ -302,17 +303,17 @@ int init_module(void) {
 	int i;
 	unsigned char message[] = "hello there";
 
-	printk(KERN_INFO "Start init...\n");
+	debug_print(KERN_INFO "Start init...\n");
 	init_nc_channel_array(chan_array);
 	start_receiving();
 	ncm_send(0, message, sizeof(message) / sizeof(unsigned char));
-	printk(KERN_INFO "End init...\n");
+	debug_print(KERN_INFO "End init...\n");
 	return 0;
 }
 
 void cleanup_module(void) {
 	ncm_receive(0, 0);
 	stop_receiving();
-	printk(KERN_INFO "Goodbye world 1.\n");
+	debug_print(KERN_INFO "Goodbye world 1.\n");
 }
 */

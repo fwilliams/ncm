@@ -25,7 +25,7 @@ enum instr_result {
  *****************************************************************************/
 
 enum instr_result handle_nop(struct interpreter* interpreter) {
-	printk("NOP instruction reached at PC = %d\n", interpreter->program_counter);
+	debug_print("NOP instruction reached at PC = %d\n", interpreter->program_counter);
 	return INSTR_OK;
 }
 
@@ -34,7 +34,7 @@ enum instr_result handle_future(struct interpreter* interpreter) {
 	u32 jmp = interpreter->program[interpreter->program_counter].args[1];
 	int error;
 
-	printk("FUTURE instruction reached at PC = %d with args %d and %d\n",
+	debug_print("FUTURE instruction reached at PC = %d with args %d and %d\n",
 			interpreter->program_counter,
 			interpreter->program[interpreter->program_counter].args[0],
 			interpreter->program[interpreter->program_counter].args[1]);
@@ -57,7 +57,7 @@ enum instr_result handle_halt(struct interpreter* interpreter) {
 	int error;
 	u64 range;
 
-	printk("HALT instruction reached at PC = %d\n", interpreter->program_counter);
+	debug_print("HALT instruction reached at PC = %d\n", interpreter->program_counter);
 
 	error = pop_future(&interpreter->future_queue, &head);
 
@@ -92,7 +92,7 @@ enum instr_result handle_wait(struct interpreter* interpreter) {
 enum instr_result handle_goto(struct interpreter* interpreter) {
 	u32 jmp = interpreter->program[interpreter->program_counter].args[0];
 
-	printk("GOTO instruction reached at PC = %d with arg %d\n",
+	debug_print("GOTO instruction reached at PC = %d with arg %d\n",
 			interpreter->program_counter, jmp);
 
 	if(jmp >= interpreter->program_length) {
@@ -105,7 +105,7 @@ enum instr_result handle_goto(struct interpreter* interpreter) {
 }
 
 enum instr_result handle_end_of_program(struct interpreter* interpreter) {
-	printk("END_OF_PROGRAM instruction reached at PC = %d\n",
+	debug_print("END_OF_PROGRAM instruction reached at PC = %d\n",
 			interpreter->program_counter);
 	return INSTR_OK;
 }
@@ -117,7 +117,7 @@ enum instr_result handle_if(struct interpreter* interpreter) {
 	u32* args = &interpreter->program[interpreter->program_counter].args[2];
 	bool result = test_guard(interpreter, guard, args, &error);
 
-	printk("IF instruction reached at PC = %d with args %d, %d\n",
+	debug_print("IF instruction reached at PC = %d with args %d, %d\n",
 			interpreter->program_counter,
 			guard, jmp);
 
@@ -138,7 +138,7 @@ enum instr_result handle_clear_counter(struct interpreter* interpreter) {
 
 	reset_counter(&interpreter->counters, counter_id);
 
-	printk("CLEAR_COUNTER instruction reached at PC = %d with arg %d\n",
+	debug_print("CLEAR_COUNTER instruction reached at PC = %d with arg %d\n",
 			interpreter->program_counter,
 			counter_id);
 
@@ -151,7 +151,7 @@ enum instr_result handle_add_to_counter(struct interpreter* interpreter) {
 
 	add_to_counter(&interpreter->counters, counter_id, amount);
 
-	printk("ADD_TO_COUNTER instruction reached at PC = %d with args %d, %d\n",
+	debug_print("ADD_TO_COUNTER instruction reached at PC = %d with args %d, %d\n",
 			interpreter->program_counter,
 			counter_id, amount);
 
@@ -164,7 +164,7 @@ enum instr_result handle_set_counter(struct interpreter* interpreter) {
 
 	set_counter(&interpreter->counters, counter_id, value);
 
-	printk("SET_COUNTER instruction reached at PC = %d with args %d, %d\n",
+	debug_print("SET_COUNTER instruction reached at PC = %d with args %d, %d\n",
 			interpreter->program_counter,
 			counter_id, value);
 
@@ -182,8 +182,8 @@ int interpreter_threadfn(void* data) {
 	struct interpreter* interpreter = (struct interpreter*) data;
 	enum instr_result instr_res;
 
-	printk("The interpreter is running! \n");
-	printk("The program has %d instructions\n", interpreter->program_length);
+	debug_print("The interpreter is running! \n");
+	debug_print("The program has %d instructions\n", interpreter->program_length);
 
 	while(!kthread_should_stop()) {
 		/* Handle the next instruction */
@@ -233,6 +233,7 @@ int interpreter_threadfn(void* data) {
 			continue;
 		}
 	}
+
 	return PROGRAM_OK;
 }
 
