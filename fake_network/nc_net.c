@@ -73,7 +73,9 @@ int nc_rcvmsg(struct nc_message *nc_msg) {
 	sock_release(sk);
 
 	nc_msg->length = length;
-	return length;
+
+	// only consider the receipt a success if it matches our protocol
+	return ((struct ethhdr*) nc_msg->value)->h_proto == ETH_P_NC ? length : -1;
 }
 
 int nc_channel_receive(int chan, int var_id) {
@@ -135,7 +137,7 @@ int receiving_threadfn(void* data) {
 		for(chan = 0; chan < sizeof(channels)/sizeof(struct nc_channel); chan++){
 			channel = &channels[chan];
 			if (memcmp(channel->mac, ((struct ethhdr*) nc_msg->value)->h_source, ETH_ALEN)
-					== 0 && ((struct ethhdr*) nc_msg->value)->h_proto == ETH_P_NC) {
+					== 0) {
 				found_channel = 1;
 				printk(KERN_INFO "received message: %s", nc_msg->value);
 
