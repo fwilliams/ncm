@@ -17,11 +17,10 @@
 #include "netcode_helper.h"
 
 // the interface to send on
-#define NET_DEVICE_NAME "enp0s3" // "wlan0" // "eth0"  //sometimes enp0s3
+//#define NET_DEVICE_NAME "enp0s3" // "wlan0" // "eth0"  //sometimes enp0s3
 
-unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };// original vm
+//unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };// original vm
 //unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xCf, 0x5c, 0xD7 };// clone vm
-
 
 /*
 struct nc_channel channels[] = { {
@@ -34,7 +33,7 @@ struct nc_channel channels[] = { {
 
 
 
-static int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac,
+static int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, char* devname,
 		unsigned char *message, int length) {
 
 	struct net_device* dev;
@@ -56,7 +55,7 @@ static int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac,
 		return -1;
 	}
 
-	dev = dev_get_by_name(&init_net, NET_DEVICE_NAME);
+	dev = dev_get_by_name(&init_net, devname);
 	if (dev == 0) {
 		debug_print(KERN_WARNING "failed to find network device\n");
 		return -1;
@@ -274,13 +273,19 @@ int ncm_receive(ncm_network_t* ncm_net, u32 chan, u32 var_id) {
 	return 0;
 }
 
-void init_network(ncm_network_t* ncm_net){
+void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 	int i = 0;
-	nc_channel_t* chan = &(ncm_net->at[i]);
+	nc_channel_t* chan;
+
 	for (i = 0; i < MAX_CHANNELS; i++) {
+		chan = &(ncm_net->at[i]);
 		spin_lock_init(&chan->lock);
 		INIT_LIST_HEAD(&chan->message_queue.list);
+		memcpy(chan->mac, params->channel_mac[i], ETH_ALEN);
+		memcpy(chan->devname, params->net_device_name[i], MAX_DEVNAME_LENGTH);
 	}
+
+	memcpy(ncm_net->mac, params->mac_address, ETH_ALEN);
 	ncm_net->receiving_thread = kthread_run(receiving_threadfn, (void*) 0, "NCM network thread");
 }
 
@@ -289,12 +294,12 @@ void destroy_network(ncm_network_t* ncm_net) {
 }
 
 //TODO: remove extra copy by packing the headers when the message is prepared
-int ncm_send(ncm_network_t* chan_array, u32 chan, u8 *msg, u32 length) {
-	nc_channel_t* channel = &(chan_array->at[chan]);
+int ncm_send(ncm_network_t* ncm_net, u32 chan, u8 *msg, u32 length) {
+	nc_channel_t* channel = &(ncm_net->at[chan]);
 	if (length > ETH_DATA_LEN) {
 		return -1;
 	}
-	return nc_sendmsg(our_mac, channel->mac, msg, length);
+	return nc_sendmsg(ncm_net->mac, channel->mac, channel->devname, msg, length);
 }
 
 

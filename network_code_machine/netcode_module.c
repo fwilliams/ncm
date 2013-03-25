@@ -14,7 +14,9 @@ MODULE_DESCRIPTION("Network Code interpreter module");
 #define PROGRAM_LEN 16
 
 struct interpreter ncm_interp;
-struct netcode_instr program[PROGRAM_LEN];
+static netcode_instr_t instructions[PROGRAM_LEN];
+static netcode_program_t program;
+static interp_params_t	interp_params;
 
 static int chrdev_major;
 
@@ -62,61 +64,77 @@ static struct file_operations fops = {
 
 
 int init_module() {
-	printk( KERN_ALERT "NCM started at time %llu\n", now_us() );
+	struct ncm_net_params params = {
+			.net_device_name 	= 	{ "enp0s3" }, // "wlan0" // "eth0"  //sometimes enp0s3
+			.mac_address		=	{ 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B }, // mac address
+			.channel_mac		=	{
+					{ 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } // mac address
+					// { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // original vm
+					// { 0x08, 0x00, 0x27, 0xCf, 0x5c, 0xD7 } // clone vm
+					// { 0x0a, 0x00, 0x27, 0x00, 0x00, 0x00 } // virtual interaface laptop addres
+			}
+	};
+	interp_params.network = params;
 
-	program[0].type = NOP;
-	program[1].type = FUTURE;
-	program[1].args[0] = 1000000;
-	program[1].args[1] = 6;
 
-	program[2].type = FUTURE;
-	program[2].args[0] = 10000000;
-	program[2].args[1] = 6;
+	debug_print( KERN_ALERT "NCM started at time %llu\n", now_us() );
 
-	program[3].type = WAIT;
-	program[3].args[0] = 100000000;
-	program[3].args[1] = 5;
+	instructions[0].type = NOP;
+	instructions[1].type = FUTURE;
+	instructions[1].args[0] = 1000000;
+	instructions[1].args[1] = 6;
 
-	program[4].type = NOP;
+	instructions[2].type = FUTURE;
+	instructions[2].args[0] = 10000000;
+	instructions[2].args[1] = 6;
 
-	program[5].type = GOTO;
-	program[5].args[0] = 9;
+	instructions[3].type = WAIT;
+	instructions[3].args[0] = 100000000;
+	instructions[3].args[1] = 5;
 
-	program[6].type = NOP;
-	program[7].type = NOP;
-	program[8].type = HALT;
+	instructions[4].type = NOP;
 
-	program[9].type = CLEAR_COUNTER;
-	program[9].args[0] = 1;
+	instructions[5].type = GOTO;
+	instructions[5].args[0] = 9;
 
-	program[10].type = IF;
-	program[10].args[0] = TEST_COUNT;
-	program[10].args[1] = 13;
-	program[10].args[2] = 1;
-	program[10].args[3] = 10;
+	instructions[6].type = NOP;
+	instructions[7].type = NOP;
+	instructions[8].type = HALT;
 
-	program[11].type = ADD_TO_COUNTER;
-	program[11].args[0] = 1;
-	program[11].args[1] = 1;
+	instructions[9].type = CLEAR_COUNTER;
+	instructions[9].args[0] = 1;
 
-	program[12].type = GOTO;
-	program[12].args[0] = 10;
+	instructions[10].type = IF;
+	instructions[10].args[0] = TEST_COUNT;
+	instructions[10].args[1] = 13;
+	instructions[10].args[2] = 1;
+	instructions[10].args[3] = 10;
 
-	program[13].type = IF;
-	program[13].args[0] = GREATER_VAR_VAR;
-	program[13].args[1] = 15;
-	program[13].args[2] = 0;
-	program[13].args[3] = 1;
+	instructions[11].type = ADD_TO_COUNTER;
+	instructions[11].args[0] = 1;
+	instructions[11].args[1] = 1;
 
-	program[14].type = GOTO;
-	program[14].args[0] = 13;
+	instructions[12].type = GOTO;
+	instructions[12].args[0] = 10;
 
-	program[15].type = END_OF_PROGRAM;
+	instructions[13].type = IF;
+	instructions[13].args[0] = GREATER_VAR_VAR;
+	instructions[13].args[1] = 15;
+	instructions[13].args[2] = 0;
+	instructions[13].args[3] = 1;
+
+	instructions[14].type = GOTO;
+	instructions[14].args[0] = 13;
+
+	instructions[15].type = END_OF_PROGRAM;
+
+	program.instructions = instructions;
+	program.length = PROGRAM_LEN;
 
 	chrdev_major = register_chrdev(0, VARSPACE_CHRDEV_NAME, &fops);
-	printk("Registered char device with major number %d\n", chrdev_major);
+	debug_print("Registered char device with major number %d\n", chrdev_major);
 
-	start_interpreter(&ncm_interp, program, PROGRAM_LEN);
+	start_interpreter(&ncm_interp, &program, &interp_params);
 
 	return 0;
 }

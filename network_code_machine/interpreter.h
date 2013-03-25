@@ -50,11 +50,19 @@
 /*
  * A single Network Code instruction
  */
-struct netcode_instr {
+typedef struct netcode_instr {
 	u8 	type;		/* The instruction type */
 	u32 args[4];	/* The instruction args. Note some may be unused */
-};
+} netcode_instr_t;
 
+typedef struct netcode_program {
+	netcode_instr_t* 	instructions;
+	u32					length;
+} netcode_program_t;
+
+typedef struct netcode_interpreter_params {
+	ncm_net_params_t network;
+} interp_params_t;
 /*
  * The current state of a network code interpreter
  */
@@ -74,7 +82,7 @@ struct interpreter {
  * This will create and start a thread to run the interpreter in
  * and set the program counter to 0.
  */
-int start_interpreter(struct interpreter* interpreter, struct netcode_instr* prog, u8 prog_len);
+int start_interpreter(struct interpreter* interpreter, netcode_program_t* program, interp_params_t* params);
 
 /*
  * Stops the interpreter thread and cleans up the interpreter
