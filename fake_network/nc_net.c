@@ -21,6 +21,8 @@ unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
 
 #define NUM_CHANNELS sizeof(channels) / sizeof(struct nc_channel)
 
+struct task_struct* receiving_thread;
+
 struct nc_channel channels[] = { {
 //		.mac = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
 		.mac = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // send to yourself, vm.
@@ -30,62 +32,48 @@ struct nc_channel channels[] = { {
 // network code ethernet protocol type
 #define ETH_P_NC	0x9009
 
-int receiving_threadfn(void* data) {
-	unsigned char buff[ETH_DATA_LEN];
+int nc_rcvmsg(struct nc_message *nc_msg) {
+	struct socket *sk = NULL;
+	int ret;
+	struct msghdr msg;
+	char addrbuf[6];
+	char controlbuf[20];
+	struct kvec vec;
 	int length;
-	int chan = (int) data;
-	struct nc_channel *channel = &channels[chan];
-	struct nc_message *tmp;
 
-	while (!kthread_should_stop()) {
-		length = nc_rcvmsg(buff, ETH_DATA_LEN);
-		printk(KERN_INFO "received... (status: %i)", length);
-		if (length < 0) {
-			printk(KERN_INFO "Failed to receive packet (status: %i)", length);
-			continue;
-		}
-		if (kthread_should_stop())
-			return -1;
+	vec.iov_base = nc_msg->value;
+	vec.iov_len = sizeof(nc_msg->value);
 
-		// check if it's from the right target and has the right type
-		if (memcmp(channel->mac, ((struct ethhdr*) buff)->h_source, ETH_ALEN)
-				== 0 && ((struct ethhdr*) buff)->h_proto == ETH_P_NC) {
-			printk(KERN_INFO "received message: %s", buff);
-			tmp = (struct nc_message *) kmalloc(sizeof(struct nc_message),
-					GFP_KERNEL);
-			memcpy(tmp->value, buff, length);
-			tmp->length = length;
+	/*test*/
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_name = addrbuf;
+	msg.msg_namelen = sizeof(addrbuf);
+	msg.msg_iov = &vec;
+	msg.msg_iovlen = 1;
+	msg.msg_control = controlbuf;
+	msg.msg_controllen = sizeof(controlbuf);
+	/*test*/
 
-			spin_lock(&channel->lock);
-			list_add(&(tmp->list), &(channel->message_queue.list));
-			spin_unlock(&channel->lock);
-		} else {
-			printk(KERN_INFO "rejected message: %s", buff);
-		}
-	}
-	return 0;
-}
-
-void start_receiving(int channel) {
-	channels[channel].receiving_thread =
-			kthread_run(receiving_threadfn, (void*) channel, "NCM interpreter");
-}
-
-void stop_receiving(int channel) {
-	kthread_stop(channels[channel].receiving_thread);
-}
-
-void init_nc_channel(struct nc_channel *chan) {
-	spin_lock_init(&chan->lock);
-	INIT_LIST_HEAD(&chan->message_queue.list);
-}
-
-int nc_channel_send(int chan, unsigned char *msg, int length) {
-	struct nc_channel *channel = &channels[chan];
-	if (length > ETH_DATA_LEN) {
+	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
+	if (ret < 0) {
+		printk(KERN_INFO "sock_create failed");
 		return -1;
 	}
-	return nc_sendmsg(our_mac, channel->mac, msg, length);
+
+	//set a timeout!
+	sk->sk->sk_rcvtimeo = 1000; // this seems to be about 2-3 seconds
+	length = kernel_recvmsg(sk, &msg, &vec, 1, vec.iov_len, 0/*MSG_DONTWAIT*/);
+	printk(KERN_INFO "received length: %i", length);
+	printk(KERN_INFO "test length: %i", vec.iov_len);
+
+	if (length == -1) {
+		printk(KERN_INFO "Failed to receive message.");
+	}
+	// close the socket
+	sock_release(sk);
+
+	nc_msg->length = length;
+	return length;
 }
 
 int nc_channel_receive(int chan, int var_id) {
@@ -122,46 +110,65 @@ int nc_channel_receive(int chan, int var_id) {
 	return 0;
 }
 
-int nc_rcvmsg(unsigned char *buffer, int length) {
-	struct socket *sk = NULL;
-	int ret;
-	struct msghdr msg;
-	char addrbuf[6];
-	char controlbuf[20];
-	struct kvec vec = { buffer, length };
 
-	/*test*/
-	memset(&msg, 0, sizeof(msg));
-	msg.msg_name = addrbuf;
-	msg.msg_namelen = sizeof(addrbuf);
-	msg.msg_iov = &vec;
-	msg.msg_iovlen = 1;
-	msg.msg_control = controlbuf;
-	msg.msg_controllen = sizeof(controlbuf);
-	/*test*/
+int receiving_threadfn(void* data) {
+	int length, chan, found_channel;
+	struct nc_channel *channel;
+	struct nc_message *nc_msg;
 
-	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
-	if (ret < 0) {
-		printk(KERN_INFO "sock_create failed");
-		return -1;
+	// get a message buffer ready for the first arrival
+	nc_msg = (struct nc_message *) kmalloc(sizeof(struct nc_message),
+			GFP_KERNEL);
+
+	while (!kthread_should_stop()) {
+		length = nc_rcvmsg(nc_msg);
+		printk(KERN_INFO "received... (status: %i)", length);
+		if (length < 0) {
+			printk(KERN_INFO "Failed to receive packet (status: %i)", length);
+			continue;
+		}
+		if (kthread_should_stop())
+			return -1;
+
+		// check if it's from the right target and has the right type
+		found_channel = 0;
+		for(chan = 0; chan < sizeof(channels)/sizeof(struct nc_channel); chan++){
+			channel = &channels[chan];
+			if (memcmp(channel->mac, ((struct ethhdr*) nc_msg->value)->h_source, ETH_ALEN)
+					== 0 && ((struct ethhdr*) nc_msg->value)->h_proto == ETH_P_NC) {
+				found_channel = 1;
+				printk(KERN_INFO "received message: %s", nc_msg->value);
+
+				spin_lock(&channel->lock);
+				list_add(&(nc_msg->list), &(channel->message_queue.list));
+				spin_unlock(&channel->lock);
+
+				//get a new message buffer ready for the next arrival
+				nc_msg = (struct nc_message *) kmalloc(sizeof(struct nc_message),
+						GFP_KERNEL);
+			}
+		}
+		if(found_channel == 0){
+			printk(KERN_INFO "rejected message: %s", nc_msg->value);
+		}
 	}
+	// release the message buffer
+	kfree(nc_msg);
+	return 0;
+}
 
-	//set a timeout!
-	sk->sk->sk_rcvtimeo = 1000; // this seems to be about 2-3 seconds
-	length = kernel_recvmsg(sk, &msg, &vec, 1, length, 0/*MSG_DONTWAIT*/);
-	printk(KERN_INFO "received length: %i", length);
+void start_receiving(void) {
+	receiving_thread =
+			kthread_run(receiving_threadfn, (void*) 0, "NCM interpreter");
+}
 
-	if (length == -1) {
-		printk(KERN_INFO "Failed to receive message.");
-		return -1;
-	}
-	// close the socket
-	ret = sk->ops->release(sk);
-	printk(KERN_INFO "release ret = %d\n", ret);
+void stop_receiving(void) {
+	kthread_stop(receiving_thread);
+}
 
-	if (sk)
-		sock_release(sk);
-	return length;
+void init_nc_channel(struct nc_channel *chan) {
+	spin_lock_init(&chan->lock);
+	INIT_LIST_HEAD(&chan->message_queue.list);
 }
 
 int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac,
@@ -188,7 +195,8 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac,
 
 	dev = dev_get_by_name(&init_net, NET_DEVICE_NAME);
 	if (dev == 0) {
-		printk(KERN_INFO "failed to find network device\n");
+		printk(KERN_WARNING "failed to find network device\n");
+		return -1;
 	}
 	ifindex = dev->ifindex;
 	dev_put(dev);
@@ -267,13 +275,19 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac,
 	printk(KERN_INFO "sendmsg ret = %d\n", len);
 
 	// close the socket
-	ret = sk->ops->release(sk);
-	printk(KERN_INFO "release ret = %d\n", ret);
-
-	if (sk)
-		sock_release(sk);
+	sock_release(sk);
 	return 0;
 }
+
+//TODO: remove extra copy by packing the headers when the message is prepared
+int nc_channel_send(int chan, unsigned char *msg, int length) {
+	struct nc_channel *channel = &channels[chan];
+	if (length > ETH_DATA_LEN) {
+		return -1;
+	}
+	return nc_sendmsg(our_mac, channel->mac, msg, length);
+}
+
 
 int init_module(void) {
 	int i;
@@ -282,18 +296,15 @@ int init_module(void) {
 	printk(KERN_INFO "Start init...\n");
 	for (i = 0; i < NUM_CHANNELS; i++) {
 		init_nc_channel(&channels[i]);
-		start_receiving(i);
 	}
+	start_receiving();
 	nc_channel_send(0, message, sizeof(message) / sizeof(unsigned char));
 	printk(KERN_INFO "End init...\n");
 	return 0;
 }
 
 void cleanup_module(void) {
-	int i;
 	nc_channel_receive(0, 0);
-	for (i = 0; i < NUM_CHANNELS; i++) {
-		stop_receiving(i);
-	}
+	stop_receiving();
 	printk(KERN_INFO "Goodbye world 1.\n");
 }
