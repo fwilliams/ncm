@@ -25,12 +25,14 @@ unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };// orig
 
 struct task_struct* receiving_thread;
 
+/*
 struct nc_channel channels[] = { {
-//		.mac = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } /*mac address*/
+//		.mac = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } // mac address
 //		.mac = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // original vm
 		.mac = { 0x08, 0x00, 0x27, 0xCf, 0x5c, 0xD7 } // clone vm
 //		.mac = { 0x0a, 0x00, 0x27, 0x00, 0x00, 0x00 } // virtual interaface laptop address
 } };
+*/
 
 // network code ethernet protocol type
 #define ETH_P_NC	0x9009
@@ -72,8 +74,8 @@ int nc_rcvmsg(struct nc_message *nc_msg, struct socket *sk) {
 	return length;
 }
 
-int nc_channel_receive(int chan, int var_id) {
-	struct nc_channel *channel = &channels[chan];
+int nc_channel_receive(nc_channel_array_t* chan_array, u32 chan, u32 var_id) {
+	struct nc_channel *channel = &(chan_array->at[chan]);
 	int empty;
 	struct nc_message *nc_msg;
 
