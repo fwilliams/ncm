@@ -16,7 +16,8 @@
 #include "nc_net.h"
 
 
-#define NET_DEVICE_NAME "lo" // "wlan0" // "eth0"  //sometimes enp0s3
+// the interface to send on
+#define NET_DEVICE_NAME "eth0" // "wlan0" // "eth0"  //sometimes enp0s3
 
 unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
 
@@ -30,6 +31,9 @@ struct nc_channel channels[] = {
 //		{ 0x0a, 0x00, 0x27, 0x00, 0x00, 0x00 } // virtual interaface laptop address
 	}
 };
+
+// network code ethernet protocol type
+#define ETH_P_NC	0x9009
 
 int receiving_threadfn(void* data){
 	unsigned char buff[ETH_DATA_LEN];
@@ -45,11 +49,17 @@ int receiving_threadfn(void* data){
 		}
 		if(kthread_should_stop()) return -1;
 
-		struct nc_message *tmp;
-		tmp = (struct nc_message *) kmalloc(sizeof(struct nc_message), GFP_KERNEL);
-		memcpy(tmp->value, buff, length);
-		tmp->length = length;
-		list_add(&(tmp->list), &(channels[channel].message_queue.list));
+		// check if it's from the right target and has the right type
+		if(memcmp(channels[channel].mac, ((struct ethhdr*)buff)->h_source, ETH_ALEN) == 0 && ((struct ethhdr*)buff)->h_proto == ETH_P_NC){
+			printk(KERN_INFO "received message: %s", buff);
+			struct nc_message *tmp;
+			tmp = (struct nc_message *) kmalloc(sizeof(struct nc_message), GFP_KERNEL);
+			memcpy(tmp->value, buff, length);
+			tmp->length = length;
+			list_add(&(tmp->list), &(channels[channel].message_queue.list));
+		} else {
+			printk(KERN_INFO "rejected message: %s", buff);
+		}
 	}
 	return 0;
 }
@@ -78,6 +88,7 @@ int nc_channel_receive(int chan, int var_id) {
 	struct nc_channel *channel = &channels[chan];
 
 	if(list_empty(&channel->message_queue.list)){
+		printk(KERN_INFO "Receive queue empty. Cannot recevie.");
 		return -1;
 	}
 	// pop the first message off the queue
@@ -203,7 +214,7 @@ int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, unsigned char *m
 	/*set the frame header*/
 	memcpy((void*) buffer, (void*) dest_mac, ETH_ALEN);
 	memcpy((void*) (buffer + ETH_ALEN), (void*) src_mac, ETH_ALEN);
-	eh->h_proto = 0x00;
+	eh->h_proto = ETH_P_NC;
 
 	/*fill the frame with some data*/
 	for (i = 0; i < length; i++) {
