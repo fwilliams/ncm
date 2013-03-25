@@ -115,6 +115,8 @@ int receiving_threadfn(void* data) {
 		printk(KERN_INFO "sock_create failed");
 		return -1;
 	}
+	// decreasing this value decreases long it takes in the worst case to unload the module
+	// however, it also causes extra overhead - unblocking to check if we should exist early
 	sk->sk->sk_rcvtimeo = 1000; // this seems to be about 2-3 seconds
 
 	// get a message buffer ready for the first arrival
