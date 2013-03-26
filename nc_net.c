@@ -243,8 +243,8 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 			chan->ifindex = -1;
 		} else {
 			chan->ifindex = dev->ifindex;
+			dev_put(dev);
 		}
-		dev_put(dev);
 
 		ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &chan->send_socket);
 		if (ret < 0) {
@@ -264,7 +264,7 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 		ncm_net->message_space.at[i].data = ncm_net->message_space.at[i].buff + ETH_HLEN;
 	}
 
-	ncm_net->receiving_thread = kthread_run(receiving_threadfn, (void*) 0, "NCM network thread");
+	ncm_net->receiving_thread = kthread_run(receiving_threadfn, (void*) ncm_net, "NCM network thread");
 }
 
 void destroy_network(ncm_network_t* ncm_net) {
