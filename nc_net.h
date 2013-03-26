@@ -62,7 +62,7 @@ typedef struct ncm_network {
 	u8					mac[ETH_ALEN];
 	message_space_t		message_space;
 	u8					sync_packet[ETH_ZLEN];
-	u8					sync_packetlen;
+	u8					sync_packetlen; // = ETH_ZLEN (includes ETH_HLEN)
 } ncm_network_t;
 
 typedef struct ncm_net_params {

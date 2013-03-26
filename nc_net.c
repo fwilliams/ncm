@@ -292,14 +292,14 @@ int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 
 int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	return nc_sendmsg(ncm_net->mac, channel->mac, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, sizeof(ncm_net->sync_packet) - ETH_HLEN, ETH_P_NC_SYNC);
+	return nc_sendmsg(ncm_net->mac, channel->mac, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
 }
 
 // timeout of 1000 seems to be about 2-3 seconds
 int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 	int length, ret;
 	u64 start, now;
-	u8 buff[ETH_ZLEN];
+	u8 buff[ncm_net->sync_packetlen];
 	struct socket *sk;
 	start = now_us();
 
@@ -314,7 +314,7 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 	sk->sk->sk_rcvtimeo = start - now + timeout;
 
 	while (sk->sk->sk_rcvtimeo > 0) {
-		length = nc_rcvmsg(buff, ETH_ZLEN, sk, ETH_P_NC_SYNC);
+		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, sk, ETH_P_NC_SYNC);
 		if (length < 0) {
 			debug_print(KERN_INFO "Failed to sync (status: %i)", length);
 		} else {
