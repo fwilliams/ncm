@@ -9,6 +9,7 @@
 
 #include "interpreter.h"
 #include "guards.h"
+#include "nc_net.h"
 
 /*
  * Statuses that can be returned by instruction
@@ -172,16 +173,33 @@ static enum instr_result handle_set_counter(ncm_interpreter_t* interpreter) {
 	return INSTR_OK;
 }
 
+// args: variable id, message id
 static enum instr_result handle_create(struct interpreter* interpreter) {
+
+	ncm_create_message_from_var(&interpreter->network, &interpreter->variable_space,
+			interpreter->program[interpreter->program_counter].args[1], interpreter->program[interpreter->program_counter].args[2]);
+
 	return INSTR_OK;
 }
 
+// args: channel id, message id
 static enum instr_result handle_send(struct interpreter* interpreter) {
-	return INSTR_OK;
+	if(ncm_send_message(&interpreter->network,
+			interpreter->program[interpreter->program_counter].args[1], interpreter->program[interpreter->program_counter].args[2]) >= 0){
+		return INSTR_OK;
+	} else {
+		return INSTR_ERROR;
+	}
 }
 
+// args: channel id, variable id
 static enum instr_result handle_receive(struct interpreter* interpreter) {
-	return INSTR_OK;
+	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space,
+			interpreter->program[interpreter->program_counter].args[1], interpreter->program[interpreter->program_counter].args[2]) > 0){
+		return INSTR_OK;
+	} else {
+		return INSTR_ERROR;
+	}
 }
 /*****************************************************************************
  * End interpreter instruction handlers
