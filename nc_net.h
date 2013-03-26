@@ -7,7 +7,7 @@
 #define NC_NET_H_
 
 #ifndef MAX_CHANNELS
-#define MAX_CHANNELS 3
+#define MAX_CHANNELS 1
 #endif
 
 #ifndef MAX_DEVNAME_LENGTH
@@ -53,7 +53,7 @@ typedef struct nc_channel {
 	nc_message_t 	message_queue;
 	u8			 	mac[ETH_ALEN];
 	spinlock_t 		lock;
-	char 			devname[MAX_DEVNAME_LENGTH];
+	u32				ifindex;
 } nc_channel_t;
 
 typedef struct ncm_network {

@@ -18,11 +18,9 @@
 
 //TODO: don't create a socket every time
 
-//TODO: get the ifindex only once during initialization
 // the message must have enough (ETH_HLEN) space before it for the header!
-static int nc_sendmsg(u8* src_mac, u8 *dest_mac, char* devname, u8 *data, int length, int protocol) {
-	struct net_device* dev;
-	int ifindex, ret, len;
+static int nc_sendmsg(u8* src_mac, u8 *dest_mac, int ifindex, u8 *data, int length, int protocol) {
+	int ret, len;
 	struct socket *sk = NULL;
 	struct msghdr msg;
 	struct kvec vec;
@@ -33,17 +31,11 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, char* devname, u8 *data, int le
 	/* destination*/
 	struct sockaddr_ll socket_address;
 
-	if (length > ETH_DATA_LEN) {
+	if (length > ETH_DATA_LEN)
 		return -1;
-	}
+	if(ifindex <= 0)
+		return -1;
 
-	dev = dev_get_by_name(&init_net, devname);
-	if (dev == 0) {
-		debug_print(KERN_WARNING "failed to find network device\n");
-		return -1;
-	}
-	ifindex = dev->ifindex;
-	dev_put(dev);
 	debug_print(KERN_INFO "ifindex = %d\n", ifindex);
 
 	packet = data - ETH_HLEN;
@@ -253,6 +245,7 @@ int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32
 
 void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 	int i = 0;
+	struct net_device *dev;
 	nc_channel_t* chan;
 
 	for (i = 0; i < MAX_CHANNELS; i++) {
@@ -260,8 +253,15 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 		spin_lock_init(&chan->lock);
 		INIT_LIST_HEAD(&chan->message_queue.list);
 		memcpy(chan->mac, params->channel_mac[i], ETH_ALEN);
-		memcpy(chan->devname, params->net_device_name[i], MAX_DEVNAME_LENGTH);
 		ncm_net->sync_packetlen = ETH_ZLEN;
+		dev = dev_get_by_name(&init_net, params->net_device_name[i]);
+		if (dev == 0) {
+			debug_print(KERN_WARNING "failed to find network device!!!!! %s\n", params->net_device_name[i]);
+			chan->ifindex = -1;
+		} else {
+			chan->ifindex = dev->ifindex;
+		}
+		dev_put(dev);
 	}
 	memcpy(ncm_net->mac, params->mac_address, ETH_ALEN);
 
@@ -287,12 +287,12 @@ int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u3
 
 int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	return nc_sendmsg(ncm_net->mac, channel->mac, channel->devname, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length, ETH_P_NC);
+	return nc_sendmsg(ncm_net->mac, channel->mac, channel->ifindex, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length, ETH_P_NC);
 }
 
 int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	return nc_sendmsg(ncm_net->mac, channel->mac, channel->devname, ncm_net->sync_packet + ETH_HLEN, sizeof(ncm_net->sync_packet) - ETH_HLEN, ETH_P_NC_SYNC);
+	return nc_sendmsg(ncm_net->mac, channel->mac, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, sizeof(ncm_net->sync_packet) - ETH_HLEN, ETH_P_NC_SYNC);
 }
 
 // timeout of 1000 seems to be about 2-3 seconds
