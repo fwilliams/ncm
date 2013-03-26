@@ -25,12 +25,12 @@ enum instr_result {
  * These functions map 1:1 with Network code instructions
  *****************************************************************************/
 
-static enum instr_result handle_nop(struct interpreter* interpreter) {
+static enum instr_result handle_nop(ncm_interpreter_t* interpreter) {
 	debug_print("NOP instruction reached at PC = %d\n", interpreter->program_counter);
 	return INSTR_OK;
 }
 
-static enum instr_result handle_future(struct interpreter* interpreter) {
+static enum instr_result handle_future(ncm_interpreter_t* interpreter) {
 	u32 delay = interpreter->program[interpreter->program_counter].args[0];
 	u32 jmp = interpreter->program[interpreter->program_counter].args[1];
 	int error;
@@ -53,8 +53,8 @@ static enum instr_result handle_future(struct interpreter* interpreter) {
 	return INSTR_OK;
 }
 
-static enum instr_result handle_halt(struct interpreter* interpreter) {
-	struct future_queue_el head;
+static enum instr_result handle_halt(ncm_interpreter_t* interpreter) {
+	ncm_future_queue_el_t head;
 	int error;
 	u64 range;
 
@@ -79,7 +79,7 @@ static enum instr_result handle_halt(struct interpreter* interpreter) {
 	return INSTR_CHANGE_PC;
 }
 
-static enum instr_result handle_wait(struct interpreter* interpreter) {
+static enum instr_result handle_wait(ncm_interpreter_t* interpreter) {
 	enum instr_result res;
 	res = handle_future(interpreter);
 
@@ -90,7 +90,7 @@ static enum instr_result handle_wait(struct interpreter* interpreter) {
 	return handle_halt(interpreter);
 }
 
-static enum instr_result handle_goto(struct interpreter* interpreter) {
+static enum instr_result handle_goto(ncm_interpreter_t* interpreter) {
 	u32 jmp = interpreter->program[interpreter->program_counter].args[0];
 
 	debug_print("GOTO instruction reached at PC = %d with arg %d\n",
@@ -105,13 +105,13 @@ static enum instr_result handle_goto(struct interpreter* interpreter) {
 	return INSTR_CHANGE_PC;
 }
 
-static enum instr_result handle_end_of_program(struct interpreter* interpreter) {
+static enum instr_result handle_end_of_program(ncm_interpreter_t* interpreter) {
 	debug_print("END_OF_PROGRAM instruction reached at PC = %d\n",
 			interpreter->program_counter);
 	return INSTR_OK;
 }
 
-static enum instr_result handle_if(struct interpreter* interpreter) {
+static enum instr_result handle_if(ncm_interpreter_t* interpreter) {
 	u32 error;
 	u32 guard = interpreter->program[interpreter->program_counter].args[0];
 	u32 jmp = interpreter->program[interpreter->program_counter].args[1];
@@ -134,7 +134,7 @@ static enum instr_result handle_if(struct interpreter* interpreter) {
 	return INSTR_OK;
 }
 
-static enum instr_result handle_clear_counter(struct interpreter* interpreter) {
+static enum instr_result handle_clear_counter(ncm_interpreter_t* interpreter) {
 	u32 counter_id = interpreter->program[interpreter->program_counter].args[0];
 
 	reset_counter(&interpreter->counters, counter_id);
@@ -146,7 +146,7 @@ static enum instr_result handle_clear_counter(struct interpreter* interpreter) {
 	return INSTR_OK;
 }
 
-static enum instr_result handle_add_to_counter(struct interpreter* interpreter) {
+static enum instr_result handle_add_to_counter(ncm_interpreter_t* interpreter) {
 	u32 counter_id = interpreter->program[interpreter->program_counter].args[0];
 	u32 amount = interpreter->program[interpreter->program_counter].args[1];
 
@@ -159,7 +159,7 @@ static enum instr_result handle_add_to_counter(struct interpreter* interpreter) 
 	return INSTR_OK;
 }
 
-static enum instr_result handle_set_counter(struct interpreter* interpreter) {
+static enum instr_result handle_set_counter(ncm_interpreter_t* interpreter) {
 	u32 counter_id = interpreter->program[interpreter->program_counter].args[0];
 	u32 value = interpreter->program[interpreter->program_counter].args[1];
 
@@ -180,7 +180,7 @@ static enum instr_result handle_set_counter(struct interpreter* interpreter) {
  * The interpreter main thread function
  */
 static int interpreter_threadfn(void* data) {
-	struct interpreter* interpreter = (struct interpreter*) data;
+	ncm_interpreter_t* interpreter = (ncm_interpreter_t*) data;
 	enum instr_result instr_res;
 	struct sched_param sparams;
 
@@ -249,7 +249,7 @@ static int interpreter_threadfn(void* data) {
  * This will create and start a thread to run the interpreter in
  * and set the program counter to 0.
  */
-int start_interpreter(struct interpreter* interpreter, netcode_program_t* program, interp_params_t* params) {
+int start_interpreter(ncm_interpreter_t* interpreter, netcode_program_t* program, interp_params_t* params) {
 
 
 	interpreter->program_counter = 0;
@@ -265,7 +265,7 @@ int start_interpreter(struct interpreter* interpreter, netcode_program_t* progra
 /*
  * Stops the interpreter thread and cleans up the interpreter
  */
-int stop_interpreter(struct interpreter* interpreter) {
+int stop_interpreter(ncm_interpreter_t* interpreter) {
 	kthread_stop(interpreter->thread);
 	destroy_network(&interpreter->network);
 	return 0;

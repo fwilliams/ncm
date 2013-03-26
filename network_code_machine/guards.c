@@ -15,7 +15,7 @@ bool handle_send_buffer_empty(void) {
 	return false;
 }
 
-bool handle_test_count(struct interpreter* interpreter, u32 counter_id, u32 test_value) {
+bool handle_test_count(ncm_interpreter_t* interpreter, u32 counter_id, u32 test_value) {
 	return (interpreter->counters.at[counter_id] == test_value);
 }
 
@@ -23,19 +23,19 @@ bool handle_status_test(u32 test_value) {
 	return false;
 }
 
-bool handle_equal_var_var(struct interpreter* interpreter, u32 var_id_1, u32 var_id_2) {
+bool handle_equal_var_var(ncm_interpreter_t* interpreter, u32 var_id_1, u32 var_id_2) {
 	return (cmp_variables(&interpreter->variable_space, var_id_1, var_id_2) == 0);
 }
 
-bool handle_greater_var_var(struct interpreter* interpreter, u32 var_id_1, u32 var_id_2) {
+bool handle_greater_var_var(ncm_interpreter_t* interpreter, u32 var_id_1, u32 var_id_2) {
 	return (cmp_variables(&interpreter->variable_space, var_id_1, var_id_2) > 0);
 }
 
-bool handle_less_var_var(struct interpreter* interpreter, u32 var_id_1, u32 var_id_2) {
+bool handle_less_var_var(ncm_interpreter_t* interpreter, u32 var_id_1, u32 var_id_2) {
 	return (cmp_variables(&interpreter->variable_space, var_id_1, var_id_2) < 0);
 }
 
-bool handle_test_var(struct interpreter* interpreter, u32 var_id, u32 test_mask) {
+bool handle_test_var(ncm_interpreter_t* interpreter, u32 var_id, u32 test_mask) {
 	return test_variable(&interpreter->variable_space, var_id, test_mask);
 }
 
@@ -50,7 +50,7 @@ bool handle_var_queue_full(u32 var_id) {
 /*
  * Tests if a guard is true or false
  */
-bool test_guard(struct interpreter* interpreter, u32 guard_id, u32* args, u32* status) {
+bool test_guard(ncm_interpreter_t* interpreter, u32 guard_id, u32* args, u32* status) {
 	*status = GUARD_OK;
 
 	switch(guard_id) {

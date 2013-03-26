@@ -13,7 +13,7 @@
 /*
  * Initializes the future queue passed in
  */
-void init_future_queue(struct future_queue* queue) {
+void init_future_queue(ncm_future_queue_t* queue) {
 	queue->first = 0;
 	queue->length = 0;
 }
@@ -21,9 +21,9 @@ void init_future_queue(struct future_queue* queue) {
 /*
  * Sorts the future queue by expiry time so that the earliest time is first
  */
-void sort_future_queue(struct future_queue* queue) {
+void sort_future_queue(ncm_future_queue_t* queue) {
 	int i, j, jx, jxp;
-	struct future_queue_el tmp;
+	ncm_future_queue_el_t tmp;
 
 	for(i = 0; i < (queue->length - 1); i++) {
 		for(j = 0; j < (queue->length - i - 1); j++) {
@@ -41,14 +41,14 @@ void sort_future_queue(struct future_queue* queue) {
 /*
  * Checks if there are no elements in the queue
  */
-bool is_empty(struct future_queue* queue) {
+bool is_empty(ncm_future_queue_t* queue) {
 	return (bool) (queue->length == 0);
 }
 
 /*
  * Add a new future to the queue
  */
-int push_future(struct future_queue* queue, u32 jmp, u64 wait_us) {
+int push_future(ncm_future_queue_t* queue, u32 jmp, u64 wait_us) {
 	int index;
 
 	if(queue->length == MAX_FUTURES) {
@@ -69,7 +69,7 @@ int push_future(struct future_queue* queue, u32 jmp, u64 wait_us) {
 /*
  * Removes the first element in the queue
  */
-int pop_future(struct future_queue* queue, struct future_queue_el* out_el) {
+int pop_future(ncm_future_queue_t* queue, ncm_future_queue_el_t* out_el) {
 	if(queue->length == 0) {
 		return FUTURE_Q_EMPTY;
 	}
@@ -84,7 +84,7 @@ int pop_future(struct future_queue* queue, struct future_queue_el* out_el) {
 /*
  * Get's a pointer to the first element in the future queue
  */
-struct future_queue_el* peek_future(struct future_queue* queue) {
+ncm_future_queue_el_t* peek_future(ncm_future_queue_t* queue) {
 	return &queue->at[queue->first];
 }
 
