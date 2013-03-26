@@ -5,6 +5,7 @@
  *  Created on: 2013-02-16
  *      Author: Francis Williams
  */
+#include <linux/sched.h>
 
 #include "interpreter.h"
 #include "guards.h"
@@ -181,6 +182,12 @@ static enum instr_result handle_set_counter(struct interpreter* interpreter) {
 static int interpreter_threadfn(void* data) {
 	struct interpreter* interpreter = (struct interpreter*) data;
 	enum instr_result instr_res;
+	struct sched_param sparams;
+
+	sparams.sched_priority = MAX_RT_PRIO-1;
+	if(sched_setscheduler(interpreter->thread, SCHED_FIFO, &sparams) == -1) {
+		return PROGRAM_ERROR;
+	}
 
 	debug_print("The interpreter is running! \n");
 	debug_print("The program has %d instructions\n", interpreter->program_length);
@@ -243,6 +250,8 @@ static int interpreter_threadfn(void* data) {
  * and set the program counter to 0.
  */
 int start_interpreter(struct interpreter* interpreter, netcode_program_t* program, interp_params_t* params) {
+
+
 	interpreter->program_counter = 0;
 	interpreter->program_length = program->length;
 	interpreter->program = program->instructions;

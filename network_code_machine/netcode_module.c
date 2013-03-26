@@ -27,12 +27,12 @@ static ssize_t varspace_chrdev_read(struct file* filep, char* buff, size_t len, 
 	get_variable_data(&ncm_interp.variable_space, 1, kbuf, &klen);
 
 	if(copy_to_user(buff, kbuf, min(len, klen)) != 0) {
-		printk("Failed reading from ncm_varspace\n");
+		debug_print("Failed reading from ncm_varspace\n");
 		return 0;
 	}
 
 	//kbuf[klen] = '\0';
-	//printk("Read %s with length %d from variable %d\n", kbuf, min(len, klen), *off);
+	//debug_print("Read %s with length %d from variable %d\n", kbuf, min(len, klen), *off);
 
 	return min(len, klen);
 }
@@ -52,7 +52,7 @@ static ssize_t varspace_chrdev_write(struct file* filp, const char __user* buff,
 	set_variable_data(&ncm_interp.variable_space, var_id, &kbuf[1], len-1);
 
 	kbuf[len] = '\0';
-	printk("Wrote %s to variable %d\n", &kbuf[1], kbuf[0]);
+	debug_print("Wrote %s to variable %d\n", &kbuf[1], kbuf[0]);
 
 	return len;
 }
@@ -124,7 +124,7 @@ int init_module() {
 	instructions[13].args[3] = 1;
 
 	instructions[14].type = GOTO;
-	instructions[14].args[0] = 13;
+	instructions[14].args[0] = 0;
 
 	instructions[15].type = END_OF_PROGRAM;
 
@@ -144,5 +144,5 @@ void cleanup_module(void) {
 
 	unregister_chrdev(chrdev_major, VARSPACE_CHRDEV_NAME);
 
-	printk( KERN_ALERT "NCM ended at time %llu\n", now_us() );
+	debug_print( KERN_ALERT "NCM ended at time %llu\n", now_us() );
 }

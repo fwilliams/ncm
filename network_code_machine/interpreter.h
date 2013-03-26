@@ -63,6 +63,7 @@ typedef struct netcode_program {
 typedef struct netcode_interpreter_params {
 	ncm_net_params_t network;
 } interp_params_t;
+
 /*
  * The current state of a network code interpreter
  */
