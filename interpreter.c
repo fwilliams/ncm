@@ -183,6 +183,10 @@ static enum instr_result handle_send(struct interpreter* interpreter) {
 static enum instr_result handle_receive(struct interpreter* interpreter) {
 	return INSTR_OK;
 }
+
+static enum instr_result handle_sync(struct interpreter* interpreter) {
+	return INSTR_OK;
+}
 /*****************************************************************************
  * End interpreter instruction handlers
  *****************************************************************************/
@@ -241,6 +245,9 @@ static int interpreter_threadfn(void* data) {
 			break;
 		case RECEIVE:
 			instr_res = handle_receive(interpreter);
+			break;
+		case SYNC:
+			instr_res = handle_sync(interpreter);
 			break;
 		case END_OF_PROGRAM:
 			instr_res = handle_end_of_program(interpreter);
