@@ -15,6 +15,7 @@
 
 #include "nc_net.h"
 #include "netcode_helper.h"
+#include "msg_space.h"
 
 // the interface to send on
 //#define NET_DEVICE_NAME "enp0s3" // "wlan0" // "eth0"  //sometimes enp0s3
@@ -32,20 +33,15 @@ struct nc_channel channels[] = { {
 */
 
 
-
-static int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, char* devname,
-		unsigned char *message, int length) {
-
+// the message must have enough (ETH_HLEN) space before it for the header!
+static int nc_sendmsg(u8* src_mac, u8 *dest_mac, char* devname, u8 *data, int length) {
 	struct net_device* dev;
-	int i, ifindex, ret, len;
+	int ifindex, ret, len;
 	struct socket *sk = NULL;
 	struct msghdr msg;
-	char buffer[length + ETH_HLEN];
 	struct kvec vec;
-	/*pointer to ethenet header*/
-	unsigned char* etherhead;
 	/*userdata in ethernet frame*/
-	unsigned char* data;
+	unsigned char* packet;
 	/*another pointer to ethernet header*/
 	struct ethhdr *eh;
 	/* destination*/
@@ -64,9 +60,8 @@ static int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, char* dev
 	dev_put(dev);
 	debug_print(KERN_INFO "ifindex = %d\n", ifindex);
 
-	etherhead = buffer;
-	data = buffer + ETH_HLEN;
-	eh = (struct ethhdr *) etherhead;
+	packet = data - ETH_HLEN;
+	eh = (struct ethhdr *) packet;
 
 	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
 	if (ret < 0) {
@@ -99,16 +94,11 @@ static int nc_sendmsg(unsigned char* src_mac, unsigned char *dest_mac, char* dev
 	socket_address.sll_addr[7] = 0x00;/*not used*/
 
 	/*set the frame header*/
-	memcpy((void*) buffer, (void*) dest_mac, ETH_ALEN);
-	memcpy((void*) (buffer + ETH_ALEN), (void*) src_mac, ETH_ALEN);
+	memcpy((void*) eh->h_dest, (void*) dest_mac, ETH_ALEN);
+	memcpy((void*) eh->h_source, (void*) src_mac, ETH_ALEN);
 	eh->h_proto = ETH_P_NC;
 
-	/*fill the frame with some data*/
-	for (i = 0; i < length; i++) {
-		data[i] = message[i];
-	}
-
-	vec.iov_base = (void *) buffer;
+	vec.iov_base = (void *) packet;
 
 	vec.iov_len = length + ETH_HLEN; //ETH_FRAME_LEN;
 
@@ -239,7 +229,8 @@ static int receiving_threadfn(void* data) {
 }
 
 
-int ncm_receive(ncm_network_t* ncm_net, u32 chan, u32 var_id) {
+
+int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 chan, u32 var_id){
 	struct nc_channel *channel = &(ncm_net->at[chan]);
 	int empty;
 	struct nc_message *nc_msg;
@@ -262,7 +253,8 @@ int ncm_receive(ncm_network_t* ncm_net, u32 chan, u32 var_id) {
 		return -1;
 	}
 
-	// TODO: read value from nc_msg->value of length nc_msg->length into variable var_id
+	set_variable_data(varspace, var_id, nc_msg->value+ETH_HLEN, nc_msg->length-ETH_HLEN);
+
 	debug_print(KERN_INFO "RECEIVED: %s", nc_msg->value+ETH_HLEN);
 
 	// delete the message from the queue
@@ -284,8 +276,8 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 		memcpy(chan->mac, params->channel_mac[i], ETH_ALEN);
 		memcpy(chan->devname, params->net_device_name[i], MAX_DEVNAME_LENGTH);
 	}
-
 	memcpy(ncm_net->mac, params->mac_address, ETH_ALEN);
+	init_message_space(&ncm_net->message_space);
 	ncm_net->receiving_thread = kthread_run(receiving_threadfn, (void*) 0, "NCM network thread");
 }
 
@@ -293,13 +285,14 @@ void destroy_network(ncm_network_t* ncm_net) {
 	kthread_stop(ncm_net->receiving_thread);
 }
 
-//TODO: remove extra copy by packing the headers when the message is prepared
-int ncm_send(ncm_network_t* ncm_net, u32 chan, u8 *msg, u32 length) {
+//TODO: get rid of extra function call
+int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 var_id, u32 msg_id){
+	return copy_message_from_var(&ncm_net->message_space, varspace, msg_id, var_id);
+}
+
+int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	if (length > ETH_DATA_LEN) {
-		return -1;
-	}
-	return nc_sendmsg(ncm_net->mac, channel->mac, channel->devname, msg, length);
+	return nc_sendmsg(ncm_net->mac, channel->mac, channel->devname, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length);
 }
 
 

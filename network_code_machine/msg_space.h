@@ -7,6 +7,7 @@
 
 #include <linux/types.h>
 #include <linux/spinlock.h>
+#include <linux/if_ether.h>
 
 #include "variable_space.h"
 
@@ -31,7 +32,8 @@
 
 typedef struct message {
 	rwlock_t	lock;
-	u8			data[MAX_MESSAGE_SIZE_BYTES];
+	u8			buff[ETH_FRAME_LEN];
+	u8			*data;					// points to the beginning of the actual datain side buff (past the header)
 	u32 		length;
 } message_t;
 

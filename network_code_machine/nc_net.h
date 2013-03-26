@@ -1,6 +1,7 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/if_ether.h>
+#include "msg_space.h"
 
 #ifndef NC_NET_H_
 #define NC_NET_H_
@@ -18,13 +19,13 @@
 
 typedef struct nc_message {
 	struct list_head 	list; 					/* kernel's list structure */
-	unsigned char 		value[ETH_DATA_LEN];
-	int 				length;
+	u8 					value[ETH_DATA_LEN];
+	u32 				length;
 } nc_message_t;
 
 typedef struct nc_channel {
 	nc_message_t 	message_queue;
-	unsigned char 	mac[ETH_ALEN];
+	u8			 	mac[ETH_ALEN];
 	spinlock_t 		lock;
 	char 			devname[MAX_DEVNAME_LENGTH];
 } nc_channel_t;
@@ -33,6 +34,7 @@ typedef struct ncm_network {
 	nc_channel_t 		at[MAX_CHANNELS];
 	struct task_struct* receiving_thread;
 	u8					mac[ETH_ALEN];
+	message_space_t		message_space;
 } ncm_network_t;
 
 typedef struct ncm_net_params {
@@ -45,10 +47,10 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params);
 
 void destroy_network(ncm_network_t* ncm_net);
 
-int ncm_send_message(ncm_network_t* ncm_net, u32 chan);
+int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id);
 
-int ncm_create_message_from_var(ncm_network_t* ncm_net, u32 var_id);
+int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 var_id, u32 msg_id);
 
-int ncm_receive_message_to_var(ncm_network_t* ncm_net, u32 chan, u32 var_id);
+int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 chan, u32 var_id);
 
 #endif /* NC_NET_H_ */
