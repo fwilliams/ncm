@@ -1,7 +1,7 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/if_ether.h>
-#include "msg_space.h"
+#include "variable_space.h"
 
 #ifndef NC_NET_H_
 #define NC_NET_H_
@@ -14,9 +14,34 @@
 #define MAX_DEVNAME_LENGTH 10
 #endif
 
+/*
+ * Maximum number of bytes per message
+ */
+#ifndef MAX_MESSAGE_SIZE_BYTES
+#define MAX_MESSAGE_SIZE_BYTES 1500
+#endif
+
+/*
+ * Maximum number messages
+ */
+#ifndef MAX_MESSAGES
+#define MAX_MESSAGES 10
+#endif
+
 // network code ethernet protocol type
 #define ETH_P_NC	0x9009
 #define ETH_P_NC_SYNC 0x900A
+
+typedef struct message {
+	rwlock_t	lock;
+	u8			buff[ETH_FRAME_LEN];
+	u8			*data;					// points to the beginning of the actual data inside buff (past the header)
+	u32 		length;					// the length of the data, not the whole buffer
+} message_t;
+
+typedef struct message_space {
+	message_t	at[MAX_MESSAGES];
+} message_space_t;
 
 typedef struct nc_message {
 	struct list_head 	list; 					/* kernel's list structure */

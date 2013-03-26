@@ -15,7 +15,6 @@
 
 #include "nc_net.h"
 #include "netcode_helper.h"
-#include "msg_space.h"
 
 //TODO: don't create a socket every time
 
@@ -265,7 +264,13 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 		ncm_net->sync_packetlen = ETH_ZLEN;
 	}
 	memcpy(ncm_net->mac, params->mac_address, ETH_ALEN);
-	init_message_space(&ncm_net->message_space);
+
+	for(i = 0; i < MAX_MESSAGES; i++) {
+		rwlock_init(&ncm_net->message_space.at[i].lock);
+		ncm_net->message_space.at[i].length = 0;
+		ncm_net->message_space.at[i].data = ncm_net->message_space.at[i].buff + ETH_HLEN;
+	}
+
 	ncm_net->receiving_thread = kthread_run(receiving_threadfn, (void*) 0, "NCM network thread");
 }
 
@@ -273,9 +278,11 @@ void destroy_network(ncm_network_t* ncm_net) {
 	kthread_stop(ncm_net->receiving_thread);
 }
 
-//TODO: get rid of extra function call
 int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 var_id, u32 msg_id){
-	return copy_message_from_var(&ncm_net->message_space, varspace, msg_id, var_id);
+	write_lock(&ncm_net->message_space.at[msg_id].lock);
+	get_variable_data(varspace, var_id, ncm_net->message_space.at[msg_id].data, &ncm_net->message_space.at[msg_id].length);
+	write_unlock(&ncm_net->message_space.at[msg_id].lock);
+	return 0;
 }
 
 int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
