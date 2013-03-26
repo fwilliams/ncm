@@ -27,7 +27,7 @@
 #define CREATE 			4
 #define DESTROY 		5
 #define SEND			6
-#define RECIEVE			7
+#define RECEIVE			7
 #define HANDLE			8
 #define GOTO			9
 #define WAIT			10

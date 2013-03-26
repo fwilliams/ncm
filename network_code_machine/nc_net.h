@@ -45,8 +45,10 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params);
 
 void destroy_network(ncm_network_t* ncm_net);
 
-int ncm_send(ncm_network_t* ncm_net, u32 chan, u8 *msg, u32 length);
+int ncm_send_message(ncm_network_t* ncm_net, u32 chan);
 
-int ncm_receive(ncm_network_t* ncm_net, u32 chan, u32 var_id);
+int ncm_create_message_from_var(ncm_network_t* ncm_net, u32 var_id);
+
+int ncm_receive_message_to_var(ncm_network_t* ncm_net, u32 chan, u32 var_id);
 
 #endif /* NC_NET_H_ */

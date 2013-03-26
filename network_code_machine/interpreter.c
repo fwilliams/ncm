@@ -171,6 +171,17 @@ static enum instr_result handle_set_counter(struct interpreter* interpreter) {
 	return INSTR_OK;
 }
 
+static enum instr_result handle_create(struct interpreter* interpreter) {
+	return INSTR_OK;
+}
+
+static enum instr_result handle_send(struct interpreter* interpreter) {
+	return INSTR_OK;
+}
+
+static enum instr_result handle_receive(struct interpreter* interpreter) {
+	return INSTR_OK;
+}
 /*****************************************************************************
  * End interpreter instruction handlers
  *****************************************************************************/
@@ -214,6 +225,15 @@ static int interpreter_threadfn(void* data) {
 			break;
 		case SET_COUNTER:
 			instr_res = handle_set_counter(interpreter);
+			break;
+		case CREATE:
+			instr_res = handle_create(interpreter);
+			break;
+		case SEND:
+			instr_res = handle_send(interpreter);
+			break;
+		case RECEIVE:
+			instr_res = handle_receive(interpreter);
 			break;
 		case END_OF_PROGRAM:
 			instr_res = handle_end_of_program(interpreter);
