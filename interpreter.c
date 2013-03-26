@@ -202,7 +202,15 @@ static enum instr_result handle_receive(struct interpreter* interpreter) {
 	}
 }
 
+// TODO: broadcast the sync instead of sending it on a specific channel
+// args: SYNC_MASTER, channel OR SYNC_SLAVE, timeout (in some unknown unit?)
 static enum instr_result handle_sync(struct interpreter* interpreter) {
+	if(interpreter->program[interpreter->program_counter].args[1] == SYNC_MASTER){
+		ncm_send_sync(&interpreter->network, interpreter->program[interpreter->program_counter].args[2]);
+	}
+	else {
+		ncm_receive_sync(&interpreter->network, interpreter->program[interpreter->program_counter].args[2]);
+	}
 	return INSTR_OK;
 }
 /*****************************************************************************

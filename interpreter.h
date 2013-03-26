@@ -42,6 +42,12 @@
 #define CLEAR_COUNTER	19
 
 /*
+ * Special parameters to netcode instructions
+ */
+#define SYNC_MASTER 0
+#define SYNC_SLAVE 1
+
+/*
  * Program error codes
  */
 #define PROGRAM_OK 		0

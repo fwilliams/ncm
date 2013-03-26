@@ -34,7 +34,7 @@ typedef struct message {
 	rwlock_t	lock;
 	u8			buff[ETH_FRAME_LEN];
 	u8			*data;					// points to the beginning of the actual data inside buff (past the header)
-	u32 		length;
+	u32 		length;					// the length of the data, not the whole buffer
 } message_t;
 
 typedef struct message_space {

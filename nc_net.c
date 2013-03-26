@@ -17,8 +17,11 @@
 #include "netcode_helper.h"
 #include "msg_space.h"
 
+//TODO: don't create a socket every time
+
+//TODO: get the ifindex only once during initialization
 // the message must have enough (ETH_HLEN) space before it for the header!
-static int nc_sendmsg(u8* src_mac, u8 *dest_mac, char* devname, u8 *data, int length) {
+static int nc_sendmsg(u8* src_mac, u8 *dest_mac, char* devname, u8 *data, int length, int protocol) {
 	struct net_device* dev;
 	int ifindex, ret, len;
 	struct socket *sk = NULL;
@@ -80,7 +83,7 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, char* devname, u8 *data, int le
 	/*set the frame header*/
 	memcpy((void*) eh->h_dest, (void*) dest_mac, ETH_ALEN);
 	memcpy((void*) eh->h_source, (void*) src_mac, ETH_ALEN);
-	eh->h_proto = ETH_P_NC;
+	eh->h_proto = protocol;
 
 	vec.iov_base = (void *) packet;
 
@@ -115,14 +118,14 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, char* devname, u8 *data, int le
 	return 0;
 }
 
-static int nc_rcvmsg(struct nc_message *nc_msg, struct socket *sk) {
+static int nc_rcvmsg(u8 *buff, int bufflen, struct socket *sk, int protocol) {
 	struct msghdr msg;
 	struct kvec vec;
 	int length;
 
 	//necessary preparation
-	vec.iov_base = &nc_msg->value;
-	vec.iov_len = sizeof(nc_msg->value);
+	vec.iov_base = buff;
+	vec.iov_len = bufflen;
 	memset(&msg, 0, sizeof(msg));
 	msg.msg_iov = (struct iovec*) &vec;
 	msg.msg_iovlen = 1;
@@ -139,13 +142,11 @@ static int nc_rcvmsg(struct nc_message *nc_msg, struct socket *sk) {
 //		debug_print(KERN_INFO "msg1: %i", vec.iov_base);
 //		debug_print(KERN_INFO "msg2: %i", nc_msg->value);
 //		debug_print(KERN_INFO "msg3: %s", (char*)vec.iov_base);
-		debug_print(KERN_INFO "msg4: %s", (char*)nc_msg->value+ETH_HLEN);
+		debug_print(KERN_INFO "msg4: %s", (char*)buff + ETH_HLEN);
 
 		// only consider the receipt a success if it matches our protocol
-		if(((struct ethhdr*) nc_msg->value)->h_proto != ETH_P_NC){
+		if(((struct ethhdr*) buff)->h_proto != protocol){
 			length = -1;
-		} else {
-			nc_msg->length = length;
 		}
 	}
 
@@ -173,11 +174,13 @@ static int receiving_threadfn(void* data) {
 			GFP_KERNEL);
 
 	while (!kthread_should_stop()) {
-		length = nc_rcvmsg(nc_msg, sk);
+		length = nc_rcvmsg(nc_msg->value, sizeof(nc_msg->value), sk, ETH_P_NC);
 		debug_print(KERN_INFO "received... (status: %i)", length);
 		if (length < 0) {
 			debug_print(KERN_INFO "Failed to receive packet (status: %i)", length);
 			continue;
+		} else {
+			nc_msg->length = length;
 		}
 		if (kthread_should_stop())
 			return -1;
@@ -259,6 +262,7 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 		INIT_LIST_HEAD(&chan->message_queue.list);
 		memcpy(chan->mac, params->channel_mac[i], ETH_ALEN);
 		memcpy(chan->devname, params->net_device_name[i], MAX_DEVNAME_LENGTH);
+		ncm_net->sync_packetlen = ETH_ZLEN;
 	}
 	memcpy(ncm_net->mac, params->mac_address, ETH_ALEN);
 	init_message_space(&ncm_net->message_space);
@@ -276,26 +280,43 @@ int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u3
 
 int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	return nc_sendmsg(ncm_net->mac, channel->mac, channel->devname, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length);
+	return nc_sendmsg(ncm_net->mac, channel->mac, channel->devname, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length, ETH_P_NC);
 }
 
+int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
+	nc_channel_t* channel = &(ncm_net->at[chan]);
+	return nc_sendmsg(ncm_net->mac, channel->mac, channel->devname, ncm_net->sync_packet + ETH_HLEN, sizeof(ncm_net->sync_packet) - ETH_HLEN, ETH_P_NC_SYNC);
+}
 
-/*
-int init_module(void) {
-	int i;
-	unsigned char message[] = "hello there";
+// timeout of 1000 seems to be about 2-3 seconds
+int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
+	int length, ret;
+	u64 start, now;
+	u8 buff[ETH_ZLEN];
+	struct socket *sk;
+	start = now_us();
 
-	debug_print(KERN_INFO "Start init...\n");
-	init_nc_channel_array(chan_array);
-	start_receiving();
-	ncm_send(0, message, sizeof(message) / sizeof(unsigned char));
-	debug_print(KERN_INFO "End init...\n");
+	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
+	if (ret < 0) {
+		debug_print(KERN_INFO "sock_create failed");
+		return -1;
+	}
+	// decreasing this value decreases long it takes in the worst case to unload the module
+	// however, it also causes extra overhead - unblocking to check if we should exist early
+	now = now_us();
+	sk->sk->sk_rcvtimeo = start - now + timeout;
+
+	while (sk->sk->sk_rcvtimeo > 0) {
+		length = nc_rcvmsg(buff, ETH_ZLEN, sk, ETH_P_NC_SYNC);
+		if (length < 0) {
+			debug_print(KERN_INFO "Failed to sync (status: %i)", length);
+		} else {
+			debug_print(KERN_INFO "CLINET SYNCED");
+		}
+		now = now_us();
+		sk->sk->sk_rcvtimeo = start - now + timeout;
+	}
+	// close the socket
+	sock_release(sk);
 	return 0;
 }
-
-void cleanup_module(void) {
-	ncm_receive(0, 0);
-	stop_receiving();
-	debug_print(KERN_INFO "Goodbye world 1.\n");
-}
-*/

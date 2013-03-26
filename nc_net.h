@@ -16,6 +16,7 @@
 
 // network code ethernet protocol type
 #define ETH_P_NC	0x9009
+#define ETH_P_NC_SYNC 0x900A
 
 typedef struct nc_message {
 	struct list_head 	list; 					/* kernel's list structure */
@@ -35,6 +36,8 @@ typedef struct ncm_network {
 	struct task_struct* receiving_thread;
 	u8					mac[ETH_ALEN];
 	message_space_t		message_space;
+	u8					sync_packet[ETH_ZLEN];
+	u8					sync_packetlen;
 } ncm_network_t;
 
 typedef struct ncm_net_params {
@@ -52,5 +55,9 @@ int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id);
 int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 var_id, u32 msg_id);
 
 int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 chan, u32 var_id);
+
+int ncm_send_sync(ncm_network_t* ncm_net, u32 chan);
+
+int ncm_receive_sync(ncm_network_t* ncm_net, int timeout);
 
 #endif /* NC_NET_H_ */
