@@ -16,12 +16,10 @@
 #include "nc_net.h"
 #include "netcode_helper.h"
 
-//TODO: don't create a socket every time
 
 // the message must have enough (ETH_HLEN) space before it for the header!
-static int nc_sendmsg(u8* src_mac, u8 *dest_mac, int ifindex, u8 *data, int length, int protocol) {
-	int ret, len;
-	struct socket *sk = NULL;
+static int nc_sendmsg(u8* src_mac, u8 *dest_mac, struct socket *sk, int ifindex, u8 *data, int length, int protocol) {
+	int len;
 	struct msghdr msg;
 	struct kvec vec;
 	/*userdata in ethernet frame*/
@@ -41,11 +39,6 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, int ifindex, u8 *data, int leng
 	packet = data - ETH_HLEN;
 	eh = (struct ethhdr *) packet;
 
-	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
-	if (ret < 0) {
-		debug_print(KERN_INFO "sock_create failed");
-		return -1;
-	}
 
 	/*RAW communication*/
 	socket_address.sll_family = PF_PACKET;
@@ -104,8 +97,6 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, int ifindex, u8 *data, int leng
 	len = kernel_sendmsg(sk, &msg, &vec, 1, vec.iov_len);
 	debug_print(KERN_INFO "sendmsg ret = %d\n", len);
 
-	// close the socket
-	sock_release(sk);
 	return 0;
 }
 
@@ -145,27 +136,21 @@ static int nc_rcvmsg(u8 *buff, int bufflen, struct socket *sk, int protocol) {
 }
 
 static int receiving_threadfn(void* data) {
-	int length, chan, found_channel, ret;
+	int length, chan, found_channel;
 	struct nc_channel *channel;
 	struct nc_message *nc_msg;
-	struct socket *sk;
 	ncm_network_t *ncm_net = (ncm_network_t*) data;
 
-	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
-	if (ret < 0) {
-		debug_print(KERN_INFO "sock_create failed");
-		return -1;
-	}
 	// decreasing this value decreases long it takes in the worst case to unload the module
 	// however, it also causes extra overhead - unblocking to check if we should exist early
-	sk->sk->sk_rcvtimeo = 1000; // this seems to be about 2-3 seconds
+	ncm_net->receive_socket->sk->sk_rcvtimeo = 1000; // this seems to be about 2-3 seconds
 
 	// get a message buffer ready for the first arrival
 	nc_msg = (struct nc_message *) kmalloc(sizeof(struct nc_message),
 			GFP_KERNEL);
 
 	while (!kthread_should_stop()) {
-		length = nc_rcvmsg(nc_msg->value, sizeof(nc_msg->value), sk, ETH_P_NC);
+		length = nc_rcvmsg(nc_msg->value, sizeof(nc_msg->value), ncm_net->receive_socket, ETH_P_NC);
 		debug_print(KERN_INFO "received... (status: %i)", length);
 		if (length < 0) {
 			debug_print(KERN_INFO "Failed to receive packet (status: %i)", length);
@@ -201,8 +186,6 @@ static int receiving_threadfn(void* data) {
 	}
 	// release the message buffer
 	kfree(nc_msg);
-	// close the socket
-	sock_release(sk);
 	return 0;
 }
 
@@ -244,7 +227,7 @@ int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32
 }
 
 void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
-	int i = 0;
+	int i, ret;
 	struct net_device *dev;
 	nc_channel_t* chan;
 
@@ -262,6 +245,16 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 			chan->ifindex = dev->ifindex;
 		}
 		dev_put(dev);
+
+		ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &chan->send_socket);
+		if (ret < 0) {
+			debug_print(KERN_WARNING "sock_create failed for channel %i", i);
+		}
+	}
+
+	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &ncm_net->receive_socket);
+	if (ret < 0) {
+		debug_print(KERN_WARNING "sock_create failed on receive socket");
 	}
 	memcpy(ncm_net->mac, params->mac_address, ETH_ALEN);
 
@@ -275,7 +268,14 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 }
 
 void destroy_network(ncm_network_t* ncm_net) {
+	int i;
+	nc_channel_t* chan;
 	kthread_stop(ncm_net->receiving_thread);
+	for (i = 0; i < MAX_CHANNELS; i++) {
+		chan = &(ncm_net->at[i]);
+		sock_release(chan->send_socket);
+	}
+	sock_release(ncm_net->receive_socket);
 }
 
 int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 var_id, u32 msg_id){
@@ -287,43 +287,35 @@ int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u3
 
 int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	return nc_sendmsg(ncm_net->mac, channel->mac, channel->ifindex, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length, ETH_P_NC);
+	return nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length, ETH_P_NC);
 }
 
 int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	return nc_sendmsg(ncm_net->mac, channel->mac, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
+	return nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
 }
 
 // timeout of 1000 seems to be about 2-3 seconds
 int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
-	int length, ret;
+	int length;
 	u64 start, now;
 	u8 buff[ncm_net->sync_packetlen];
-	struct socket *sk;
 	start = now_us();
 
-	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &sk);
-	if (ret < 0) {
-		debug_print(KERN_INFO "sock_create failed");
-		return -1;
-	}
 	// decreasing this value decreases long it takes in the worst case to unload the module
 	// however, it also causes extra overhead - unblocking to check if we should exist early
 	now = now_us();
-	sk->sk->sk_rcvtimeo = start - now + timeout;
+	ncm_net->receive_socket->sk->sk_rcvtimeo = start - now + timeout;
 
-	while (sk->sk->sk_rcvtimeo > 0) {
-		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, sk, ETH_P_NC_SYNC);
+	while (ncm_net->receive_socket->sk->sk_rcvtimeo > 0) {
+		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->receive_socket, ETH_P_NC_SYNC);
 		if (length < 0) {
 			debug_print(KERN_INFO "Failed to sync (status: %i)", length);
 		} else {
 			debug_print(KERN_INFO "CLINET SYNCED");
 		}
 		now = now_us();
-		sk->sk->sk_rcvtimeo = start - now + timeout;
+		ncm_net->receive_socket->sk->sk_rcvtimeo = start - now + timeout;
 	}
-	// close the socket
-	sock_release(sk);
 	return 0;
 }

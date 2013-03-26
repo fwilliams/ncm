@@ -54,6 +54,7 @@ typedef struct nc_channel {
 	u8			 	mac[ETH_ALEN];
 	spinlock_t 		lock;
 	u32				ifindex;
+	struct socket*	send_socket;
 } nc_channel_t;
 
 typedef struct ncm_network {
@@ -63,6 +64,7 @@ typedef struct ncm_network {
 	message_space_t		message_space;
 	u8					sync_packet[ETH_ZLEN];
 	u8					sync_packetlen; // = ETH_ZLEN (includes ETH_HLEN)
+	struct socket*		receive_socket;
 } ncm_network_t;
 
 typedef struct ncm_net_params {
