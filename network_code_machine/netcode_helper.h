@@ -10,6 +10,9 @@
 #ifndef NETCODE_HELPER_H_
 #define NETCODE_HELPER_H_
 
+/*
+ * Prints to the kernel log if compiled in debug mode
+ */
 #ifdef __DEBUG__
 #define debug_print(msg, args...) printk(msg, ##args)
 #else
