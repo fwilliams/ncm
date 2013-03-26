@@ -115,20 +115,21 @@ static int nc_rcvmsg(u8 *buff, int bufflen, struct socket *sk, int protocol) {
 //	debug_print(KERN_INFO "msg0: %i", vec.iov_base);
 
 	length = kernel_recvmsg(sk, &msg, &vec, 1, vec.iov_len, 0/*MSG_DONTWAIT*/);
-	debug_print(KERN_INFO "received length: %i", length);
-	debug_print(KERN_INFO "test length: %i", vec.iov_len);
+//	debug_print(KERN_INFO "received length: %i", length);
+//	debug_print(KERN_INFO "test length: %i", vec.iov_len);
 
 	if (length < 0) {
-		debug_print(KERN_INFO "Failed to receive message.");
+//		debug_print(KERN_INFO "No message.");
 	} else {
-//		debug_print(KERN_INFO "msg1: %i", vec.iov_base);
-//		debug_print(KERN_INFO "msg2: %i", nc_msg->value);
-//		debug_print(KERN_INFO "msg3: %s", (char*)vec.iov_base);
-		debug_print(KERN_INFO "msg4: %s", (char*)buff + ETH_HLEN);
 
 		// only consider the receipt a success if it matches our protocol
 		if(((struct ethhdr*) buff)->h_proto != protocol){
 			length = -1;
+		} else {
+			//		debug_print(KERN_INFO "msg1: %i", vec.iov_base);
+			//		debug_print(KERN_INFO "msg2: %i", nc_msg->value);
+			//		debug_print(KERN_INFO "msg3: %s", (char*)vec.iov_base);
+					debug_print(KERN_INFO "msg4: %s", (char*)buff + ETH_HLEN);
 		}
 	}
 
@@ -151,9 +152,9 @@ static int receiving_threadfn(void* data) {
 
 	while (!kthread_should_stop()) {
 		length = nc_rcvmsg(nc_msg->value, sizeof(nc_msg->value), ncm_net->receive_socket, ETH_P_NC);
-		debug_print(KERN_INFO "received... (status: %i)", length);
+//		debug_print(KERN_INFO "received... (status: %i)", length);
 		if (length < 0) {
-			debug_print(KERN_INFO "Failed to receive packet (status: %i)", length);
+//			debug_print(KERN_INFO "No packet received (status: %i)", length);
 			continue;
 		} else {
 			nc_msg->length = length;
