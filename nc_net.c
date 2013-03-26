@@ -17,22 +17,6 @@
 #include "netcode_helper.h"
 #include "msg_space.h"
 
-// the interface to send on
-//#define NET_DEVICE_NAME "enp0s3" // "wlan0" // "eth0"  //sometimes enp0s3
-
-//unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };// original vm
-//unsigned char our_mac[ETH_ALEN] = { 0x08, 0x00, 0x27, 0xCf, 0x5c, 0xD7 };// clone vm
-
-/*
-struct nc_channel channels[] = { {
-//		.mac = { 0x30, 0x85, 0xA9, 0x8E, 0x87, 0x95 } // mac address
-//		.mac = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B } // original vm
-		.mac = { 0x08, 0x00, 0x27, 0xCf, 0x5c, 0xD7 } // clone vm
-//		.mac = { 0x0a, 0x00, 0x27, 0x00, 0x00, 0x00 } // virtual interaface laptop address
-} };
-*/
-
-
 // the message must have enough (ETH_HLEN) space before it for the header!
 static int nc_sendmsg(u8* src_mac, u8 *dest_mac, char* devname, u8 *data, int length) {
 	struct net_device* dev;

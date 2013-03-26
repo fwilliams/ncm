@@ -33,7 +33,7 @@
 typedef struct message {
 	rwlock_t	lock;
 	u8			buff[ETH_FRAME_LEN];
-	u8			*data;					// points to the beginning of the actual datain side buff (past the header)
+	u8			*data;					// points to the beginning of the actual data inside buff (past the header)
 	u32 		length;
 } message_t;
 
@@ -44,11 +44,5 @@ typedef struct message_space {
 int init_message_space(message_space_t* msgspace);
 
 int copy_message_from_var(message_space_t* msgspace, varspace_t* varspace, u32 msg_id, u32 var_id);
-
-int copy_message_to_var(message_space_t* msgspace, varspace_t* varspace, u32 msg_id, u32 var_id);
-
-int get_message(message_space_t* msgspace, u32 msg_id, u8* out_data, u32* out_len);
-
-int set_message(message_space_t* msgspace, u32 msg_id, u8* data, u32 len);
 
 #endif /* MSG_SPACE_H_ */
