@@ -328,8 +328,6 @@ static int interpreter_threadfn(void* data) {
  * and set the program counter to 0.
  */
 int start_interpreter(ncm_interpreter_t* interpreter, ncm_program_t* program, ncm_interp_params_t* params) {
-
-
 	interpreter->program_counter = 0;
 	interpreter->program_length = program->length;
 	interpreter->program = program->instructions;
