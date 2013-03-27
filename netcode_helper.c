@@ -10,12 +10,11 @@
 
 #include <linux/time.h>
 
-static struct timeval helper_timeval;
-
 /*
  * Gets the current timestamp in microseconds
  */
 u64 now_us(void) {
+	struct timeval helper_timeval;
 	do_gettimeofday(&helper_timeval);
 	return helper_timeval.tv_sec * USEC_PER_SEC + helper_timeval.tv_usec;
 }
