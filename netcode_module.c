@@ -68,7 +68,7 @@ int init_module() {
 
 #ifdef VM1
 	make_program(instructions, &interp_params.network, TYPE_ARCH1);
-#else
+#endif
 #ifdef VM2
 	make_program(instructions, &interp_params.network, TYPE_ARCH2);
 #endif
