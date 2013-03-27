@@ -309,10 +309,9 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 
 	// decreasing this value decreases long it takes in the worst case to unload the module
 	// however, it also causes extra overhead - unblocking to check if we should exist early
-	now = now_us();
 	// convert timer from jiffies to to microseconds
-	ncm_net->receive_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
-	debug_print(KERN_INFO "syncing for %i...", ncm_net->receive_socket->sk->sk_rcvtimeo);
+	ncm_net->receive_socket->sk->sk_rcvtimeo = usecs_to_jiffies(timeout);
+	debug_print(KERN_INFO "syncing for %l...", ncm_net->receive_socket->sk->sk_rcvtimeo);
 
 	while (ncm_net->receive_socket->sk->sk_rcvtimeo > 0) {
 		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->receive_socket, ETH_P_NC_SYNC);
@@ -323,7 +322,7 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 		}
 		now = now_us();
 		ncm_net->receive_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
-		debug_print(KERN_INFO "syncing for %i...", ncm_net->receive_socket->sk->sk_rcvtimeo);
+		debug_print(KERN_INFO "syncing for %l...", ncm_net->receive_socket->sk->sk_rcvtimeo);
 	}
 	return 0;
 }
