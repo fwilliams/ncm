@@ -9,6 +9,7 @@
 #include <net/arp.h>
 #include <linux/kthread.h>
 #include <linux/completion.h>
+#include <linux/jiffies.h>
 
 #include "nc_net.h"
 #include "netcode_helper.h"
@@ -299,7 +300,7 @@ int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
 	return nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
 }
 
-// timeout of 1000 seems to be about 2-3 seconds
+// timeout is in microseconds
 int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 	int length;
 	u64 start, now;
@@ -309,7 +310,8 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 	// decreasing this value decreases long it takes in the worst case to unload the module
 	// however, it also causes extra overhead - unblocking to check if we should exist early
 	now = now_us();
-	ncm_net->receive_socket->sk->sk_rcvtimeo = start - now + timeout;
+	// convert timer from jiffies to to microseconds
+	ncm_net->receive_socket->sk->sk_rcvtimeo = (start - now + timeout)*HZ/1000;
 
 	while (ncm_net->receive_socket->sk->sk_rcvtimeo > 0) {
 		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->receive_socket, ETH_P_NC_SYNC);
@@ -319,7 +321,7 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 			debug_print(KERN_INFO "CLINET SYNCED");
 		}
 		now = now_us();
-		ncm_net->receive_socket->sk->sk_rcvtimeo = start - now + timeout;
+		ncm_net->receive_socket->sk->sk_rcvtimeo = (start - now + timeout)*HZ/1000;
 	}
 	return 0;
 }
