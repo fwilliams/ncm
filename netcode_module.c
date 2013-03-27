@@ -28,12 +28,12 @@ static ssize_t varspace_chrdev_read(struct file* filep, char* buff, size_t len, 
 	get_variable_data(&ncm_interp.variable_space, 1, kbuf, &klen);
 
 	if(copy_to_user(buff, kbuf, min(len, klen)) != 0) {
-		debug_print("Failed reading from ncm_varspace\n");
+		debug_print("Failed reading from ncm_varspace");
 		return 0;
 	}
 
 	kbuf[klen] = '\0';
-	debug_print("Read %s with length %d from variable %d\n", kbuf, min(len, klen), (int) *off);
+	debug_print("Read %s with length %d from variable %d", kbuf, min(len, klen), (int) *off);
 
 	return min(len, klen);
 }
@@ -53,7 +53,7 @@ static ssize_t varspace_chrdev_write(struct file* filp, const char __user* buff,
 	set_variable_data(&ncm_interp.variable_space, var_id, &kbuf[1], len-1);
 
 	kbuf[len] = '\0';
-	debug_print("Wrote %s to variable %d\n", &kbuf[1], kbuf[0]);
+	debug_print("Wrote %s to variable %d", &kbuf[1], kbuf[0]);
 
 	return len;
 }
@@ -77,11 +77,11 @@ int init_module() {
 	program.length = PROGRAM_LEN;
 
 	chrdev_major = register_chrdev(0, VARSPACE_CHRDEV_NAME, &fops);
-	debug_print("Registered char device with major number %d\n", chrdev_major);
+	debug_print("Registered char device with major number %d", chrdev_major);
 
 
 	start_interpreter(&ncm_interp, &program, &interp_params);
-	debug_print( KERN_ALERT "NCM started at time %llu\n", now_us() );
+	debug_print( KERN_ALERT "NCM started at time %llu", now_us() );
 
 	return 0;
 }
@@ -91,5 +91,5 @@ void cleanup_module(void) {
 
 	unregister_chrdev(chrdev_major, VARSPACE_CHRDEV_NAME);
 
-	debug_print( KERN_ALERT "NCM ended at time %llu\n", now_us() );
+	debug_print( KERN_ALERT "NCM ended at time %llu", now_us() );
 }

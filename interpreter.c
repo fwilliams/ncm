@@ -27,7 +27,7 @@ enum instr_result {
  *****************************************************************************/
 
 static enum instr_result handle_nop(ncm_interpreter_t* interpreter) {
-	debug_print("NOP instruction reached at PC = %d\n", interpreter->program_counter);
+	debug_print("NOP instruction reached at PC = %d", interpreter->program_counter);
 	return INSTR_OK;
 }
 
@@ -36,7 +36,7 @@ static enum instr_result handle_future(ncm_interpreter_t* interpreter) {
 	u32 jmp = interpreter->program[interpreter->program_counter].args[1];
 	int error;
 
-	debug_print("FUTURE instruction reached at PC = %d with args %d and %d\n",
+	debug_print("FUTURE instruction reached at PC = %d with args %d and %d",
 			interpreter->program_counter,
 			interpreter->program[interpreter->program_counter].args[0],
 			interpreter->program[interpreter->program_counter].args[1]);
@@ -59,7 +59,7 @@ static enum instr_result handle_halt(ncm_interpreter_t* interpreter) {
 	int error;
 	u64 range;
 
-	debug_print("HALT instruction reached at PC = %d\n", interpreter->program_counter);
+	debug_print("HALT instruction reached at PC = %d", interpreter->program_counter);
 
 	error = pop_future(&interpreter->future_queue, &head);
 
@@ -94,7 +94,7 @@ static enum instr_result handle_wait(ncm_interpreter_t* interpreter) {
 static enum instr_result handle_goto(ncm_interpreter_t* interpreter) {
 	u32 jmp = interpreter->program[interpreter->program_counter].args[0];
 
-	debug_print("GOTO instruction reached at PC = %d with arg %d\n",
+	debug_print("GOTO instruction reached at PC = %d with arg %d",
 			interpreter->program_counter, jmp);
 
 	if(jmp >= interpreter->program_length) {
@@ -107,7 +107,7 @@ static enum instr_result handle_goto(ncm_interpreter_t* interpreter) {
 }
 
 static enum instr_result handle_end_of_program(ncm_interpreter_t* interpreter) {
-	debug_print("END_OF_PROGRAM instruction reached at PC = %d\n",
+	debug_print("END_OF_PROGRAM instruction reached at PC = %d",
 			interpreter->program_counter);
 	return INSTR_OK;
 }
@@ -119,7 +119,7 @@ static enum instr_result handle_if(ncm_interpreter_t* interpreter) {
 	u32* args = &interpreter->program[interpreter->program_counter].args[2];
 	bool result = test_guard(interpreter, guard, args, &error);
 
-	debug_print("IF instruction reached at PC = %d with args %d, %d\n",
+	debug_print("IF instruction reached at PC = %d with args %d, %d",
 			interpreter->program_counter,
 			guard, jmp);
 
@@ -140,7 +140,7 @@ static enum instr_result handle_clear_counter(ncm_interpreter_t* interpreter) {
 
 	reset_counter(&interpreter->counters, counter_id);
 
-	debug_print("CLEAR_COUNTER instruction reached at PC = %d with arg %d\n",
+	debug_print("CLEAR_COUNTER instruction reached at PC = %d with arg %d",
 			interpreter->program_counter,
 			counter_id);
 
@@ -153,7 +153,7 @@ static enum instr_result handle_add_to_counter(ncm_interpreter_t* interpreter) {
 
 	add_to_counter(&interpreter->counters, counter_id, amount);
 
-	debug_print("ADD_TO_COUNTER instruction reached at PC = %d with args %d, %d\n",
+	debug_print("ADD_TO_COUNTER instruction reached at PC = %d with args %d, %d",
 			interpreter->program_counter,
 			counter_id, amount);
 
@@ -166,7 +166,7 @@ static enum instr_result handle_set_counter(ncm_interpreter_t* interpreter) {
 
 	set_counter(&interpreter->counters, counter_id, value);
 
-	debug_print("SET_COUNTER instruction reached at PC = %d with args %d, %d\n",
+	debug_print("SET_COUNTER instruction reached at PC = %d with args %d, %d",
 			interpreter->program_counter,
 			counter_id, value);
 
@@ -178,7 +178,7 @@ static enum instr_result handle_create(struct interpreter* interpreter) {
 	u32 var_id = interpreter->program[interpreter->program_counter].args[0];
 	u32 msg_id = interpreter->program[interpreter->program_counter].args[1];
 
-	debug_print("CREATE instruction reached at PC = %d with args %d, %d\n",
+	debug_print("CREATE instruction reached at PC = %d with args %d, %d",
 			interpreter->program_counter,
 			var_id, msg_id);
 
@@ -192,7 +192,7 @@ static enum instr_result handle_send(struct interpreter* interpreter) {
 	u32 chan_id = interpreter->program[interpreter->program_counter].args[0];
 	u32 msg_id = interpreter->program[interpreter->program_counter].args[1];
 
-	debug_print("SEND instruction reached at PC = %d with args %d, %d\n",
+	debug_print("SEND instruction reached at PC = %d with args %d, %d",
 			interpreter->program_counter,
 			chan_id, msg_id);
 
@@ -206,13 +206,13 @@ static enum instr_result handle_send(struct interpreter* interpreter) {
 // args: channel id, variable id
 static enum instr_result handle_receive(struct interpreter* interpreter) {
 	u32 chan_id = interpreter->program[interpreter->program_counter].args[0];
-	u32 msg_id = interpreter->program[interpreter->program_counter].args[1];
+	u32 var_id = interpreter->program[interpreter->program_counter].args[1];
 
-	debug_print("RECEIVE instruction reached at PC = %d with args %d, %d\n",
+	debug_print("RECEIVE instruction reached at PC = %d with args %d, %d",
 			interpreter->program_counter,
-			chan_id, msg_id);
+			chan_id, var_id);
 
-	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space, chan_id, msg_id) >= 0) {
+	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space, chan_id, var_id) >= 0) {
 		return INSTR_OK;
 	} else {
 		return INSTR_ERROR;
@@ -225,7 +225,7 @@ static enum instr_result handle_sync(struct interpreter* interpreter) {
 	u32 sync_type = interpreter->program[interpreter->program_counter].args[0];
 	u32 chan_id = interpreter->program[interpreter->program_counter].args[1];
 
-	debug_print("SYNC instruction reached at PC = %d with args %d, %d\n",
+	debug_print("SYNC instruction reached at PC = %d with args %d, %d",
 			interpreter->program_counter,
 			sync_type, chan_id);
 
@@ -254,8 +254,8 @@ static int interpreter_threadfn(void* data) {
 		return PROGRAM_ERROR;
 	}
 
-	debug_print("The interpreter is running! \n");
-	debug_print("The program has %d instructions\n", interpreter->program_length);
+	debug_print("The interpreter is running!");
+	debug_print("The program has %d instructions", interpreter->program_length);
 
 	while(!kthread_should_stop()) {
 		/* Handle the next instruction */
@@ -312,7 +312,7 @@ static int interpreter_threadfn(void* data) {
 			++interpreter->program_counter;
 			break;
 		case INSTR_ERROR:
-			debug_print("Instruction at PC = %d returned an error. Interpreter terminating.\n", interpreter->program_counter);
+			debug_print("Instruction at PC = %d returned an error. Interpreter terminating.", interpreter->program_counter);
 			return PROGRAM_ERROR;
 		case INSTR_CHANGE_PC:
 			continue;

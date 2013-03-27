@@ -41,7 +41,7 @@ void make_program(ncm_instr_t* instructions, ncm_net_params_t* params, int type)
 		instructions[2].args[1] = 0;
 
 		instructions[3].type = WAIT;
-		instructions[3].args[0] = 10000000;
+		instructions[3].args[0] = 100000;
 		instructions[3].args[1] = 4;
 
 		instructions[4].type = RECEIVE;
@@ -81,12 +81,15 @@ void make_program(ncm_instr_t* instructions, ncm_net_params_t* params, int type)
 		instructions[2].args[1] = 0;
 
 		instructions[3].type = WAIT;
-		instructions[3].args[0] = 10000000;
-		instructions[3].args[1] = 1;
+		instructions[3].args[0] = 100000;
+		instructions[3].args[1] = 4;
 
 		instructions[4].type = RECEIVE;
 		instructions[4].args[0] = 0;
 		instructions[4].args[1] = 1;
+
+		instructions[5].type = GOTO;
+		instructions[5].args[0] = 1;
 
 		break;
 	}

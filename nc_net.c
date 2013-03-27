@@ -193,7 +193,7 @@ out:
 
 
 int ncm_receive_message_to_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace, u32 chan, u32 var_id){
-	struct nc_channel *channel = &(ncm_net->at[chan]);
+	nc_channel_t *channel = &(ncm_net->at[chan]);
 	int empty;
 	struct nc_message *nc_msg;
 
@@ -220,7 +220,8 @@ int ncm_receive_message_to_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace,
 	// copy the entire contents of the message (excluding ethernet headers)
 	set_variable_data(varspace, var_id, nc_msg->value+ETH_HLEN, nc_msg->length-ETH_HLEN);
 
-	debug_print(KERN_INFO "RECEIVED: %s", nc_msg->value+ETH_HLEN);
+	debug_print("Length of received message: %d", nc_msg->length);
+	debug_print("RECEIVED: %s", nc_msg->value+ETH_HLEN);
 
 	// delete the message from the queue
 	spin_lock(&channel->lock);
