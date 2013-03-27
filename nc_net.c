@@ -315,18 +315,18 @@ int ncm_receive_sync(ncm_network_t* ncm_net, s64 timeout){
 	ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(timeout);
 	debug_print(KERN_INFO "Syncing for %li\n", ncm_net->sync_socket->sk->sk_rcvtimeo);
 
-	while (ncm_net->sync_socket->sk->sk_rcvtimeo > 0) {
+	while (1) {
 		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->sync_socket, ETH_P_NC_SYNC);
 		if (length < 0) {
 			debug_print(KERN_INFO "Failed to sync (status: %i)", length);
+			now = now_us();
+			if(start - now + timeout < 0)
+				break;
+			ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
+			debug_print(KERN_INFO "Syncing for %li", ncm_net->sync_socket->sk->sk_rcvtimeo);
 		} else {
 			debug_print(KERN_INFO "CLIENT SYNCED %i", length);
 		}
-		now = now_us();
-		if(start - now + timeout < 0)
-			break;
-		ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
-		debug_print(KERN_INFO "Syncing for %li", ncm_net->sync_socket->sk->sk_rcvtimeo);
 	}
 	return 0;
 }

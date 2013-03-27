@@ -61,7 +61,7 @@ void make_program(ncm_instr_t* instructions, ncm_net_params_t* params, int type)
 		break;
 
 	case TYPE_ARCH2:
-		memcpy(params->net_device_name[0], devname2, 4);
+		memcpy(params->net_device_name[0], devname2, 6);
 		*params->mac_address = *vm2_mac;
 		*params->channel_mac[0] = *vm1_mac;
 
