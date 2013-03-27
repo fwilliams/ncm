@@ -175,17 +175,28 @@ static enum instr_result handle_set_counter(ncm_interpreter_t* interpreter) {
 
 // args: variable id, message id
 static enum instr_result handle_create(struct interpreter* interpreter) {
+	u32 var_id = interpreter->program[interpreter->program_counter].args[0];
+	u32 msg_id = interpreter->program[interpreter->program_counter].args[1];
 
-	ncm_create_message_from_var(&interpreter->network, &interpreter->variable_space,
-			interpreter->program[interpreter->program_counter].args[1], interpreter->program[interpreter->program_counter].args[2]);
+	debug_print("CREATE instruction reached at PC = %d with args %d, %d\n",
+			interpreter->program_counter,
+			var_id, msg_id);
+
+	ncm_create_message_from_var(&interpreter->network, &interpreter->variable_space, var_id, msg_id);
 
 	return INSTR_OK;
 }
 
 // args: channel id, message id
 static enum instr_result handle_send(struct interpreter* interpreter) {
-	if(ncm_send_message(&interpreter->network,
-			interpreter->program[interpreter->program_counter].args[1], interpreter->program[interpreter->program_counter].args[2]) >= 0){
+	u32 chan_id = interpreter->program[interpreter->program_counter].args[0];
+	u32 msg_id = interpreter->program[interpreter->program_counter].args[1];
+
+	debug_print("SEND instruction reached at PC = %d with args %d, %d\n",
+			interpreter->program_counter,
+			chan_id, msg_id);
+
+	if(ncm_send_message(&interpreter->network, chan_id, msg_id) >= 0) {
 		return INSTR_OK;
 	} else {
 		return INSTR_ERROR;
@@ -194,8 +205,14 @@ static enum instr_result handle_send(struct interpreter* interpreter) {
 
 // args: channel id, variable id
 static enum instr_result handle_receive(struct interpreter* interpreter) {
-	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space,
-			interpreter->program[interpreter->program_counter].args[1], interpreter->program[interpreter->program_counter].args[2]) > 0){
+	u32 chan_id = interpreter->program[interpreter->program_counter].args[0];
+	u32 msg_id = interpreter->program[interpreter->program_counter].args[1];
+
+	debug_print("RECEIVE instruction reached at PC = %d with args %d, %d\n",
+			interpreter->program_counter,
+			chan_id, msg_id);
+
+	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space, chan_id, msg_id) > 0) {
 		return INSTR_OK;
 	} else {
 		return INSTR_ERROR;
@@ -205,12 +222,19 @@ static enum instr_result handle_receive(struct interpreter* interpreter) {
 // TODO: broadcast the sync instead of sending it on a specific channel
 // args: SYNC_MASTER, channel OR SYNC_SLAVE, timeout (in some unknown unit?)
 static enum instr_result handle_sync(struct interpreter* interpreter) {
-	if(interpreter->program[interpreter->program_counter].args[1] == SYNC_MASTER){
-		ncm_send_sync(&interpreter->network, interpreter->program[interpreter->program_counter].args[2]);
+	u32 sync_type = interpreter->program[interpreter->program_counter].args[0];
+	u32 chan_id = interpreter->program[interpreter->program_counter].args[1];
+
+	debug_print("SYNC instruction reached at PC = %d with args %d, %d\n",
+			interpreter->program_counter,
+			sync_type, chan_id);
+
+	if(sync_type == SYNC_MASTER){
+		ncm_send_sync(&interpreter->network, chan_id);
+	} else {
+		ncm_receive_sync(&interpreter->network, chan_id);
 	}
-	else {
-		ncm_receive_sync(&interpreter->network, interpreter->program[interpreter->program_counter].args[2]);
-	}
+
 	return INSTR_OK;
 }
 /*****************************************************************************

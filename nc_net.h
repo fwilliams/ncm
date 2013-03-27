@@ -7,7 +7,7 @@
 #define NC_NET_H_
 
 #ifndef MAX_CHANNELS
-#define MAX_CHANNELS 1
+#define MAX_CHANNELS 2
 #endif
 
 #ifndef MAX_DEVNAME_LENGTH
