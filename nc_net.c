@@ -258,6 +258,8 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 	}
 
 	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &ncm_net->receive_socket);
+
+	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &ncm_net->sync_socket);
 	if (ret < 0) {
 		debug_print(KERN_WARNING "sock_create failed on receive socket");
 	}
@@ -310,18 +312,18 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 	// decreasing this value decreases long it takes in the worst case to unload the module
 	// however, it also causes extra overhead - unblocking to check if we should exist early
 	// convert timer from jiffies to to microseconds
-	ncm_net->receive_socket->sk->sk_rcvtimeo = usecs_to_jiffies(timeout);
+	ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(timeout);
 	debug_print(KERN_INFO "syncing for %l...", ncm_net->receive_socket->sk->sk_rcvtimeo);
 
-	while (ncm_net->receive_socket->sk->sk_rcvtimeo > 0) {
-		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->receive_socket, ETH_P_NC_SYNC);
+	while (ncm_net->sync_socket->sk->sk_rcvtimeo > 0) {
+		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->sync_socket, ETH_P_NC_SYNC);
 		if (length < 0) {
 			debug_print(KERN_INFO "Failed to sync (status: %i)", length);
 		} else {
 			debug_print(KERN_INFO "CLINET SYNCED %i", length);
 		}
 		now = now_us();
-		ncm_net->receive_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
+		ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
 		debug_print(KERN_INFO "syncing for %l...", ncm_net->receive_socket->sk->sk_rcvtimeo);
 	}
 	return 0;

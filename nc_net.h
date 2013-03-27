@@ -72,6 +72,7 @@ typedef struct ncm_network {
 	u8					sync_packet[ETH_ZLEN];
 	u8					sync_packetlen; // = ETH_ZLEN (includes ETH_HLEN)
 	struct socket*		receive_socket;
+	struct socket*		sync_socket;
 } ncm_network_t;
 
 typedef struct ncm_net_params {
