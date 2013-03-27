@@ -57,7 +57,7 @@ void make_program(ncm_instr_t* instructions, ncm_net_params_t* params, int type)
 		instructions[6].args[1] = 0;
 
 		instructions[7].type = GOTO;
-		instructions[7].args[0] = 2;
+		instructions[7].args[0] = 3;
 		break;
 
 	case TYPE_ARCH2:
@@ -76,17 +76,17 @@ void make_program(ncm_instr_t* instructions, ncm_net_params_t* params, int type)
 		instructions[1].args[0] = 0;
 		instructions[1].args[1] = 1;
 
-		instructions[1].type = CREATE;
-		instructions[1].args[0] = 0;
-		instructions[1].args[1] = 0;
-
-		instructions[2].type = SEND;
+		instructions[2].type = CREATE;
 		instructions[2].args[0] = 0;
 		instructions[2].args[1] = 0;
 
-		instructions[3].type = WAIT;
-		instructions[3].args[0] = 10000000;
-		instructions[3].args[1] = 1;
+		instructions[3].type = SEND;
+		instructions[3].args[0] = 0;
+		instructions[3].args[1] = 0;
+
+		instructions[4].type = WAIT;
+		instructions[4].args[0] = 10000000;
+		instructions[4].args[1] = 1;
 		break;
 	}
 }
