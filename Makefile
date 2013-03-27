@@ -18,3 +18,5 @@ update:
 	make uninstall clean all install
 delete:
 	make clean uninstall
+watch:
+	watch 'dmesg | tail -n 80'

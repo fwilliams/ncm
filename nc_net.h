@@ -29,8 +29,15 @@
 #endif
 
 // network code ethernet protocol type
-#define ETH_P_NC	0x9009
-#define ETH_P_NC_SYNC 0x900A
+#define ETH_P_NC		0x9009
+#define ETH_P_NC_SYNC 	0x900A
+
+// possible network errors
+#define NC_ENOMSG 		35 // no message received
+#define NC_ENOIF 		36 // no network interface available
+#define NC_ETOOBIG	 	37 // the message to send is bigger than an ethernet frame
+#define NC_ENOTNC 		38 // the packet received was not a network code packet
+#define NC_ENOTUS 		39 // the packet received was not for us
 
 typedef struct message {
 	rwlock_t	lock;
