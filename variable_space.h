@@ -47,13 +47,16 @@
 #define VARSPACE_OK	0
 
 /*
- * Struct representing a single variable
+ * Struct representing the data a single variable
  */
 typedef struct var_data {
 	u8			data[MAX_VAR_SIZE_BYTES];	/* The data stored in this variable */
 	size_t		length;						/* The number of bytes of data stored */
 } vardata_t;
 
+/*
+ * Struct with everything necesary to manage a single variable
+ */
 typedef struct variable {
 	vardata_t	varbuf[2];	/* Double buffer of variables */
 	vardata_t*	read_buf;	/* Pointer to the front buffer */
@@ -61,8 +64,9 @@ typedef struct variable {
 	spinlock_t	write_lock;	/* Lock on the write buffer pointer */
 } variable_t;
 
-
-/* The variable space */
+/*
+ * The variable space
+ */
 typedef struct variable_space {
 	variable_t	at[MAX_VARIABLES];	/* Array of all variables available */
 } ncm_varspace_t;
