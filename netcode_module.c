@@ -26,13 +26,13 @@ static ssize_t varspace_chrdev_read(struct file* filep, char* buff, size_t len, 
 	u32 klen;
 
 	get_variable_data(&ncm_interp.variable_space, 1, kbuf, &klen);
+	kbuf[klen] = '\0';
 
 	if(copy_to_user(buff, kbuf, min(len, klen)) != 0) {
 		debug_print("Failed reading from ncm_varspace");
 		return 0;
 	}
 
-	kbuf[klen] = '\0';
 	debug_print("Read %s with length %d from variable %d", kbuf, min(len, klen), (int) *off);
 
 	return min(len, klen);

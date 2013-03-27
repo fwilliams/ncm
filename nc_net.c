@@ -95,7 +95,7 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, struct socket *sk, int ifindex,
 //	Attempt to fill the read buffer.
 	msg.msg_flags = 0;
 	len = kernel_sendmsg(sk, &msg, &vec, 1, vec.iov_len);
-	debug_print(KERN_INFO "sendmsg ret = %d\n", len);
+	//debug_print(KERN_INFO "sendmsg ret = %d\n", len);
 
 	return 0;
 }
@@ -128,12 +128,13 @@ static int nc_rcvmsg(u8 *buff, int bufflen, struct socket *sk, int protocol) {
 			//		debug_print(KERN_INFO "msg1: %i", vec.iov_base);
 			//		debug_print(KERN_INFO "msg2: %i", nc_msg->value);
 			//		debug_print(KERN_INFO "msg3: %s", (char*)vec.iov_base);
-					debug_print(KERN_INFO "msg4: %s", (char*)buff + ETH_HLEN);
+			//		debug_print(KERN_INFO "msg4: %s", (char*)buff + ETH_HLEN);
 		}
 	}
 
 	return length;
 }
+
 
 static int receiving_threadfn(void* data) {
 	int length, chan, found_channel;
@@ -169,7 +170,7 @@ static int receiving_threadfn(void* data) {
 			if (memcmp(channel->mac, ((struct ethhdr*) nc_msg->value)->h_source, ETH_ALEN)
 					== 0) {
 				found_channel = 1;
-				debug_print(KERN_INFO "received message: %s", nc_msg->value + ETH_HLEN);
+				//debug_print(KERN_INFO "Received message: %s", nc_msg->value + ETH_HLEN);
 
 				spin_lock(&channel->lock);
 				list_add(&(nc_msg->list), &(channel->message_queue.list));
@@ -181,7 +182,7 @@ static int receiving_threadfn(void* data) {
 			}
 		}
 		if(found_channel == 0){
-			debug_print(KERN_INFO "rejected message: %s", nc_msg->value);
+			//debug_print(KERN_INFO "Rejected message: %s", nc_msg->value);
 		}
 	}
 out:
@@ -189,7 +190,6 @@ out:
 	kfree(nc_msg);
 	return 0;
 }
-
 
 
 int ncm_receive_message_to_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace, u32 chan, u32 var_id){
@@ -220,8 +220,7 @@ int ncm_receive_message_to_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace,
 	// copy the entire contents of the message (excluding ethernet headers)
 	set_variable_data(varspace, var_id, nc_msg->value+ETH_HLEN, nc_msg->length-ETH_HLEN);
 
-	debug_print("Length of received message: %d", nc_msg->length);
-	debug_print("RECEIVED: %s", nc_msg->value+ETH_HLEN);
+	debug_print("Received: %s", nc_msg->value+ETH_HLEN);
 
 	// delete the message from the queue
 	spin_lock(&channel->lock);
@@ -241,11 +240,11 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 		spin_lock_init(&chan->lock);
 		INIT_LIST_HEAD(&chan->message_queue.list);
 		memcpy(chan->mac, params->channel_mac[i], ETH_ALEN);
-		printk(KERN_INFO "MAC%i: %pM", i, chan->mac);
+		debug_print("MAC Address %i: %pM", i, chan->mac);
 		ncm_net->sync_packetlen = ETH_ZLEN;
 		dev = dev_get_by_name(&init_net, params->net_device_name[i]);
 		if (dev == 0) {
-			debug_print(KERN_WARNING "failed to find network device!!!!! %s\n", params->net_device_name[i]);
+			debug_print("Failed to find network device! %s", params->net_device_name[i]);
 			chan->ifindex = -1;
 		} else {
 			chan->ifindex = dev->ifindex;
@@ -254,7 +253,7 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 
 		ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &chan->send_socket);
 		if (ret < 0) {
-			debug_print(KERN_WARNING "sock_create failed for channel %i", i);
+			debug_print("sock_create() failed for channel %i", i);
 		}
 	}
 
@@ -262,7 +261,7 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 
 	ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &ncm_net->sync_socket);
 	if (ret < 0) {
-		debug_print(KERN_WARNING "sock_create failed on receive socket");
+		debug_print(KERN_WARNING "sock_create() failed on receive socket");
 	}
 	memcpy(ncm_net->mac, params->mac_address, ETH_ALEN);
 	printk(KERN_INFO "MAC: %pM", ncm_net->mac);
@@ -316,19 +315,19 @@ int ncm_receive_sync(ncm_network_t* ncm_net, s64 timeout){
 	// however, it also causes extra overhead - unblocking to check if we should exist early
 	// convert timer from jiffies to to microseconds
 	ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(timeout);
-	debug_print(KERN_INFO "Syncing for %li\n", ncm_net->sync_socket->sk->sk_rcvtimeo);
+	debug_print("Syncing for %li", ncm_net->sync_socket->sk->sk_rcvtimeo);
 
 	while (1) {
 		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->sync_socket, ETH_P_NC_SYNC);
 		if (length < 0) {
-			debug_print(KERN_INFO "Failed to sync (status: %i)", length);
+			debug_print("Failed to sync (status: %i)", length);
 			now = now_us();
 			if(start - now + timeout < 0)
 				return 0;
 			ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
-			debug_print(KERN_INFO "Syncing for %li", ncm_net->sync_socket->sk->sk_rcvtimeo);
+			debug_print("Syncing for %li", ncm_net->sync_socket->sk->sk_rcvtimeo);
 		} else {
-			debug_print(KERN_INFO "CLIENT SYNCED %i", length);
+			debug_print("Client synced: %i", length);
 			return 0;
 		}
 	}
