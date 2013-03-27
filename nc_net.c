@@ -300,7 +300,7 @@ int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
 	return nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
 }
 
-// timeout is in microseconds
+// timeout is in milliseconds
 int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 	int length;
 	u64 start, now;
@@ -311,7 +311,7 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 	// however, it also causes extra overhead - unblocking to check if we should exist early
 	now = now_us();
 	// convert timer from jiffies to to microseconds
-	ncm_net->receive_socket->sk->sk_rcvtimeo = (start - now + timeout)*HZ/1000;
+	ncm_net->receive_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
 
 	while (ncm_net->receive_socket->sk->sk_rcvtimeo > 0) {
 		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->receive_socket, ETH_P_NC_SYNC);
@@ -321,7 +321,7 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 			debug_print(KERN_INFO "CLINET SYNCED");
 		}
 		now = now_us();
-		ncm_net->receive_socket->sk->sk_rcvtimeo = (start - now + timeout)*HZ/1000;
+		ncm_net->receive_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
 	}
 	return 0;
 }
