@@ -212,7 +212,7 @@ static enum instr_result handle_receive(struct interpreter* interpreter) {
 			interpreter->program_counter,
 			chan_id, msg_id);
 
-	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space, chan_id, msg_id) > 0) {
+	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space, chan_id, msg_id) >= 0) {
 		return INSTR_OK;
 	} else {
 		return INSTR_ERROR;
