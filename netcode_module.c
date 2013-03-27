@@ -15,9 +15,9 @@ MODULE_DESCRIPTION("Network Code interpreter module");
 #define PROGRAM_LEN 16
 
 static ncm_interpreter_t ncm_interp;
-static netcode_instr_t instructions[PROGRAM_LEN];
-static netcode_program_t program;
-static interp_params_t	interp_params;
+static ncm_instr_t instructions[PROGRAM_LEN];
+static ncm_program_t program;
+static ncm_interp_params_t	interp_params;
 
 static int chrdev_major;
 

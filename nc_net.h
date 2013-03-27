@@ -87,9 +87,9 @@ void destroy_network(ncm_network_t* ncm_net);
 
 int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id);
 
-int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 var_id, u32 msg_id);
+int ncm_create_message_from_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace, u32 var_id, u32 msg_id);
 
-int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 chan, u32 var_id);
+int ncm_receive_message_to_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace, u32 chan, u32 var_id);
 
 int ncm_send_sync(ncm_network_t* ncm_net, u32 chan);
 

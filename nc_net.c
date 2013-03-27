@@ -192,7 +192,7 @@ out:
 
 
 
-int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 chan, u32 var_id){
+int ncm_receive_message_to_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace, u32 chan, u32 var_id){
 	struct nc_channel *channel = &(ncm_net->at[chan]);
 	int empty;
 	struct nc_message *nc_msg;
@@ -284,7 +284,7 @@ void destroy_network(ncm_network_t* ncm_net) {
 	sock_release(ncm_net->receive_socket);
 }
 
-int ncm_create_message_from_var(ncm_network_t* ncm_net, varspace_t* varspace, u32 var_id, u32 msg_id){
+int ncm_create_message_from_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace, u32 var_id, u32 msg_id){
 	write_lock(&ncm_net->message_space.at[msg_id].lock);
 	get_variable_data(varspace, var_id, ncm_net->message_space.at[msg_id].data, &ncm_net->message_space.at[msg_id].length);
 	write_unlock(&ncm_net->message_space.at[msg_id].lock);

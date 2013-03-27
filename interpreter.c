@@ -327,7 +327,7 @@ static int interpreter_threadfn(void* data) {
  * This will create and start a thread to run the interpreter in
  * and set the program counter to 0.
  */
-int start_interpreter(ncm_interpreter_t* interpreter, netcode_program_t* program, interp_params_t* params) {
+int start_interpreter(ncm_interpreter_t* interpreter, ncm_program_t* program, ncm_interp_params_t* params) {
 
 
 	interpreter->program_counter = 0;

@@ -8,7 +8,7 @@
 #include "variable_space.h"
 
 /* Initializes a new variable_space */
-int init_variable_space(varspace_t* varspace) {
+int init_variable_space(ncm_varspace_t* varspace) {
 	int i;
 
 	for(i = 0; i<MAX_VARIABLES; i++) {
@@ -25,12 +25,12 @@ int init_variable_space(varspace_t* varspace) {
 }
 
 /* Restores all resources used by the variable space */
-int destroy_variable_space(varspace_t* varspace) {
+int destroy_variable_space(ncm_varspace_t* varspace) {
 	return VARSPACE_OK;
 }
 
 /* Gets the data stored for the variable id argument */
-int get_variable_data(varspace_t* varspace, u32 var_id, u8* out_data, size_t* out_length) {
+int get_variable_data(ncm_varspace_t* varspace, u32 var_id, u8* out_data, size_t* out_length) {
 	variable_t* var;
 
 	rcu_read_lock();
@@ -51,7 +51,7 @@ int get_variable_data(varspace_t* varspace, u32 var_id, u8* out_data, size_t* ou
 }
 
 /* Sets the data for the variable id argument to the data argument */
-int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length) {
+int set_variable_data(ncm_varspace_t* varspace, u32 var_id, u8* data, size_t length) {
 	variable_t* var;
 	vardata_t* tmp;
 
@@ -81,7 +81,7 @@ int set_variable_data(varspace_t* varspace, u32 var_id, u8* data, size_t length)
  * until a non-zero result is found. The sign of the result determines the return value
  * of this function.
  */
-int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
+int cmp_variables(ncm_varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
 	s32 i, result;
 	variable_t *var1, *var2;
 	size_t len1, len2;
@@ -124,7 +124,7 @@ int cmp_variables(varspace_t* varspace, u32 var_id_1, u32 var_id_2) {
 /********************************************************************
  * Start test_variable() handlers
  *******************************************************************/
-bool handle_test_var_is_zero(varspace_t* varspace, u32 var_id) {
+bool handle_test_var_is_zero(ncm_varspace_t* varspace, u32 var_id) {
 	s32 i;
 	variable_t *var;
 
@@ -144,7 +144,7 @@ bool handle_test_var_is_zero(varspace_t* varspace, u32 var_id) {
 	return true;
 }
 
-bool handle_test_var_is_nonzero(varspace_t* varspace, u32 var_id) {
+bool handle_test_var_is_nonzero(ncm_varspace_t* varspace, u32 var_id) {
 	s32 i;
 	variable_t *var;
 
@@ -164,11 +164,11 @@ bool handle_test_var_is_nonzero(varspace_t* varspace, u32 var_id) {
 	return false;
 }
 
-bool handle_test_var_even_parity(varspace_t* varspace, u32 var_id) {
+bool handle_test_var_even_parity(ncm_varspace_t* varspace, u32 var_id) {
 	return false;
 }
 
-bool handle_test_var_odd_parity(varspace_t* varspace, u32 var_id) {
+bool handle_test_var_odd_parity(ncm_varspace_t* varspace, u32 var_id) {
 	return false;
 }
 /********************************************************************
@@ -183,7 +183,7 @@ bool handle_test_var_odd_parity(varspace_t* varspace, u32 var_id) {
  * 	* VAR_EVEN_PARITY	-- Returns true if the variable has even parity
  *	* VAR_ODD_PARITY	-- Returns true if the variable has odd parity
  */
-bool test_variable(varspace_t* varspace, u32 var_id, u32 condition_mask) {
+bool test_variable(ncm_varspace_t* varspace, u32 var_id, u32 condition_mask) {
 	switch(condition_mask) {
 	case VAR_IS_ZERO:
 		return handle_test_var_is_zero(varspace, var_id);
