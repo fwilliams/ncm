@@ -1,6 +1,3 @@
-/*
- *  hello-1.c - The simplest kernel module.
- */
 #include <linux/module.h>	/* Needed by all modules */
 #include <linux/kernel.h>	/* Needed for KERN_INFO */
 #include <net/net_namespace.h>
@@ -12,6 +9,7 @@
 #include <net/arp.h>
 #include <linux/kthread.h>
 #include <linux/completion.h>
+#include <linux/jiffies.h>
 
 #include "nc_net.h"
 #include "netcode_helper.h"
@@ -29,12 +27,14 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, struct socket *sk, int ifindex,
 	/* destination*/
 	struct sockaddr_ll socket_address;
 
-	if (length > ETH_DATA_LEN)
-		return -1;
-	if(ifindex <= 0)
-		return -1;
-
-	debug_print(KERN_INFO "ifindex = %d\n", ifindex);
+	if (length > ETH_DATA_LEN){
+		debug_print(KERN_WARNING "Attempting to send a packet that exceeds the size of an ethernet frame.");
+		return -NC_ETOOBIG;
+	}
+	if(ifindex <= 0){
+		debug_print(KERN_WARNING "Attempting to send a packet over a channel with no network interface configured.");
+		return -NC_ENOIF;
+	}
 
 	packet = data - ETH_HLEN;
 	eh = (struct ethhdr *) packet;
@@ -124,7 +124,7 @@ static int nc_rcvmsg(u8 *buff, int bufflen, struct socket *sk, int protocol) {
 
 		// only consider the receipt a success if it matches our protocol
 		if(((struct ethhdr*) buff)->h_proto != protocol){
-			length = -1;
+			length = NC_ENOTNC;
 		} else {
 			//		debug_print(KERN_INFO "msg1: %i", vec.iov_base);
 			//		debug_print(KERN_INFO "msg2: %i", nc_msg->value);
@@ -160,7 +160,7 @@ static int receiving_threadfn(void* data) {
 			nc_msg->length = length;
 		}
 		if (kthread_should_stop())
-			return -1;
+			goto out;
 
 		// check if it's from the right target and has the right type
 		found_channel = 0;
@@ -185,6 +185,7 @@ static int receiving_threadfn(void* data) {
 			debug_print(KERN_INFO "rejected message: %s", nc_msg->value);
 		}
 	}
+out:
 	// release the message buffer
 	kfree(nc_msg);
 	return 0;
@@ -202,8 +203,8 @@ int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32
 	spin_unlock(&channel->lock);
 
 	if (empty) {
-		debug_print(KERN_INFO "Receive queue empty. Cannot receive.");
-		return -1;
+		debug_print(KERN_WARNING "Receive queue empty. Cannot receive.");
+		return -NC_ENOMSG;
 	}
 	// read the first message off the queue
 	spin_lock(&channel->lock);
@@ -211,10 +212,13 @@ int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32
 			list_first_entry(&channel->message_queue.list, struct nc_message, list);
 	spin_unlock(&channel->lock);
 
+	// redundant check
 	if (!nc_msg) {
-		return -1;
+		debug_print(KERN_WARNING "Receive queue empty. Cannot receive.");
+		return -NC_ENOMSG;
 	}
 
+	// copy the entire contents of the message (excluding ethernet headers)
 	set_variable_data(varspace, var_id, nc_msg->value+ETH_HLEN, nc_msg->length-ETH_HLEN);
 
 	debug_print(KERN_INFO "RECEIVED: %s", nc_msg->value+ETH_HLEN);
@@ -296,7 +300,7 @@ int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
 	return nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
 }
 
-// timeout of 1000 seems to be about 2-3 seconds
+// timeout is in microseconds
 int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 	int length;
 	u64 start, now;
@@ -306,7 +310,8 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 	// decreasing this value decreases long it takes in the worst case to unload the module
 	// however, it also causes extra overhead - unblocking to check if we should exist early
 	now = now_us();
-	ncm_net->receive_socket->sk->sk_rcvtimeo = start - now + timeout;
+	// convert timer from jiffies to to microseconds
+	ncm_net->receive_socket->sk->sk_rcvtimeo = (start - now + timeout)*HZ/1000;
 
 	while (ncm_net->receive_socket->sk->sk_rcvtimeo > 0) {
 		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->receive_socket, ETH_P_NC_SYNC);
@@ -316,7 +321,7 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 			debug_print(KERN_INFO "CLINET SYNCED");
 		}
 		now = now_us();
-		ncm_net->receive_socket->sk->sk_rcvtimeo = start - now + timeout;
+		ncm_net->receive_socket->sk->sk_rcvtimeo = (start - now + timeout)*HZ/1000;
 	}
 	return 0;
 }
