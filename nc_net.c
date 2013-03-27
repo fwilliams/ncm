@@ -240,6 +240,7 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 		spin_lock_init(&chan->lock);
 		INIT_LIST_HEAD(&chan->message_queue.list);
 		memcpy(chan->mac, params->channel_mac[i], ETH_ALEN);
+		printk(KERN_INFO "MAC%i: %pM", i, chan->mac);
 		ncm_net->sync_packetlen = ETH_ZLEN;
 		dev = dev_get_by_name(&init_net, params->net_device_name[i]);
 		if (dev == 0) {
@@ -263,6 +264,7 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 		debug_print(KERN_WARNING "sock_create failed on receive socket");
 	}
 	memcpy(ncm_net->mac, params->mac_address, ETH_ALEN);
+	printk(KERN_INFO "MAC: %pM", ncm_net->mac);
 
 	for(i = 0; i < MAX_MESSAGES; i++) {
 		rwlock_init(&ncm_net->message_space.at[i].lock);
@@ -321,11 +323,12 @@ int ncm_receive_sync(ncm_network_t* ncm_net, s64 timeout){
 			debug_print(KERN_INFO "Failed to sync (status: %i)", length);
 			now = now_us();
 			if(start - now + timeout < 0)
-				break;
+				return 0;
 			ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
 			debug_print(KERN_INFO "Syncing for %li", ncm_net->sync_socket->sk->sk_rcvtimeo);
 		} else {
 			debug_print(KERN_INFO "CLIENT SYNCED %i", length);
+			return 0;
 		}
 	}
 	return 0;

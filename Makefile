@@ -11,6 +11,7 @@ all:
 clean:
 	make -C $(kernel_dir) M=$(PWD) clean
 install:
+	dmesg --clear
 	insmod $(module_name).ko
 uninstall:
 	rmmod $(module_name)
