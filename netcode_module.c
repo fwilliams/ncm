@@ -66,7 +66,12 @@ static struct file_operations fops = {
 
 int init_module() {
 
+#ifdef VM1
 	make_program(instructions, &interp_params.network, TYPE_ARCH1);
+#else
+#ifdef VM2
+	make_program(instructions, &interp_params.network, TYPE_ARCH2);
+#endif
 
 	program.instructions = instructions;
 	program.length = PROGRAM_LEN;

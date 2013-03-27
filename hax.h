@@ -5,6 +5,8 @@
  *      Author: francis
  */
 
+#include <linux/string.h>
+
 #ifndef HAX_H_
 #define HAX_H_
 
@@ -12,13 +14,14 @@
 #define TYPE_ARCH2 2
 
 void make_program(netcode_instr_t* instructions, ncm_net_params_t* params, int type) {
-	u8 vm1_mac[] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
-	u8 vm2_mac[] = { 0x08, 0x00, 0x27, 0x46, 0xBC, 0x02 };
-	u8* devname = "enp0s3";
+	u8 vm1_mac[] = { 0x08, 0x00, 0x27, 0x46, 0xBC, 0x02 };
+	u8 vm2_mac[] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
+	u8 devname1[] = "enp0s3";
+	u8 devname2[] = "eth0";
 
 	switch(type) {
 	case TYPE_ARCH1:
-		*params->net_device_name[0] = *devname;
+		memcpy(params->net_device_name[0], devname1, 6);
 		*params->mac_address = *vm1_mac;
 		*params->channel_mac[0] = *vm2_mac;
 
@@ -38,7 +41,7 @@ void make_program(netcode_instr_t* instructions, ncm_net_params_t* params, int t
 		instructions[2].args[1] = 1;
 
 		instructions[3].type = WAIT;
-		instructions[3].args[0] = 50000000;
+		instructions[3].args[0] = 10000000;
 		instructions[3].args[1] = 4;
 
 		instructions[4].type = RECEIVE;
@@ -58,7 +61,7 @@ void make_program(netcode_instr_t* instructions, ncm_net_params_t* params, int t
 		break;
 
 	case TYPE_ARCH2:
-		*params->net_device_name[0] = *devname;
+		memcpy(params->net_device_name[0], devname2, 4);
 		*params->mac_address = *vm2_mac;
 		*params->channel_mac[0] = *vm1_mac;
 
@@ -82,7 +85,7 @@ void make_program(netcode_instr_t* instructions, ncm_net_params_t* params, int t
 		instructions[2].args[1] = 0;
 
 		instructions[3].type = WAIT;
-		instructions[3].args[0] = 50000000;
+		instructions[3].args[0] = 10000000;
 		instructions[3].args[1] = 1;
 		break;
 	}

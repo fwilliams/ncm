@@ -312,6 +312,7 @@ static int interpreter_threadfn(void* data) {
 			++interpreter->program_counter;
 			break;
 		case INSTR_ERROR:
+			debug_print("Instruction at PC = %d returned an error. Interpreter terminating.\n", interpreter->program_counter);
 			return PROGRAM_ERROR;
 		case INSTR_CHANGE_PC:
 			continue;

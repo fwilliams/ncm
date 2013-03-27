@@ -320,7 +320,7 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 		if (length < 0) {
 			debug_print(KERN_INFO "Failed to sync (status: %i)", length);
 		} else {
-			debug_print(KERN_INFO "CLINET SYNCED %i", length);
+			debug_print(KERN_INFO "CLIENT SYNCED %i", length);
 		}
 		now = now_us();
 		ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
