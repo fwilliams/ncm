@@ -70,7 +70,7 @@ void make_program(netcode_instr_t* instructions, ncm_net_params_t* params, int t
 		 */
 		instructions[0].type = SYNC;
 		instructions[0].args[0] = SYNC_SLAVE;
-		instructions[0].args[1] = 1;
+		instructions[0].args[1] = 10000000;
 
 		instructions[1].type = RECEIVE;
 		instructions[1].args[0] = 0;
