@@ -344,8 +344,8 @@ int start_interpreter(ncm_interpreter_t* interpreter, ncm_program_t* program, nc
  * Stops the interpreter thread and cleans up the interpreter
  */
 int stop_interpreter(ncm_interpreter_t* interpreter) {
-	kthread_stop(interpreter->thread);
 	destroy_network(&interpreter->network);
+	kthread_stop(interpreter->thread);
 	return 0;
 }
 

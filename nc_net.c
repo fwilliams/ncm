@@ -295,7 +295,11 @@ int ncm_create_message_from_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace
 
 int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	return nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length, ETH_P_NC);
+	int ret;
+	read_lock(&ncm_net->message_space.at[msg_id].lock);
+	ret = nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length, ETH_P_NC);
+	read_unlock(&ncm_net->message_space.at[msg_id].lock);
+	return ret;
 }
 
 int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){

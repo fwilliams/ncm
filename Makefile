@@ -12,12 +12,14 @@ clean:
 	make -C $(kernel_dir) M=$(PWD) clean
 install:
 	dmesg --clear
+	sync
 	insmod $(module_name).ko
 uninstall:
+	sync
 	rmmod $(module_name)
 update:
-	make uninstall clean all install
+	make uninstall clean all install vm=$(vm)
 delete:
-	make clean uninstall
+	make clean uninstall vm=$(vm)
 watch:
 	watch 'dmesg | tail -n 80'
