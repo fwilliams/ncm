@@ -93,6 +93,6 @@ int ncm_receive_message_to_var(ncm_network_t* ncm_net, varspace_t* varspace, u32
 
 int ncm_send_sync(ncm_network_t* ncm_net, u32 chan);
 
-int ncm_receive_sync(ncm_network_t* ncm_net, int timeout);
+int ncm_receive_sync(ncm_network_t* ncm_net, s64 timeout);
 
 #endif /* NC_NET_H_ */

@@ -17,7 +17,7 @@ void make_program(netcode_instr_t* instructions, ncm_net_params_t* params, int t
 	u8 vm1_mac[] = { 0x08, 0x00, 0x27, 0x46, 0xBC, 0x02 };
 	u8 vm2_mac[] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
 	u8 devname1[] = "enp0s3";
-	u8 devname2[] = "eth0";
+	u8 devname2[] = "enp0s3";
 
 	switch(type) {
 	case TYPE_ARCH1:
@@ -38,7 +38,7 @@ void make_program(netcode_instr_t* instructions, ncm_net_params_t* params, int t
 
 		instructions[2].type = SYNC;
 		instructions[2].args[0] = SYNC_MASTER;
-		instructions[2].args[1] = 1;
+		instructions[2].args[1] = 0;
 
 		instructions[3].type = WAIT;
 		instructions[3].args[0] = 10000000;

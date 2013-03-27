@@ -32,7 +32,7 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, struct socket *sk, int ifindex,
 		return -NC_ETOOBIG;
 	}
 	if(ifindex <= 0){
-		debug_print(KERN_WARNING "Attempting to send a packet over a channel with no network interface configured.");
+		debug_print(KERN_WARNING "Attempting to send a packet over a channel with no network interface configured. (ifindex %i)", ifindex);
 		return -NC_ENOIF;
 	}
 
@@ -121,10 +121,9 @@ static int nc_rcvmsg(u8 *buff, int bufflen, struct socket *sk, int protocol) {
 	if (length < 0) {
 //		debug_print(KERN_INFO "No message.");
 	} else {
-
 		// only consider the receipt a success if it matches our protocol
 		if(((struct ethhdr*) buff)->h_proto != protocol){
-			length = NC_ENOTNC;
+			length = -NC_ENOTNC;
 		} else {
 			//		debug_print(KERN_INFO "msg1: %i", vec.iov_base);
 			//		debug_print(KERN_INFO "msg2: %i", nc_msg->value);
@@ -302,18 +301,19 @@ int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
 	return nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
 }
 
-// timeout is in milliseconds
-int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
-	int length;
-	u64 start, now;
+// timeout is in microseconds
+int ncm_receive_sync(ncm_network_t* ncm_net, s64 timeout){
+	s32 length;
+	s64 start, now;
 	u8 buff[ncm_net->sync_packetlen];
 	start = now_us();
+//	debug_print(KERN_INFO "start: %lu", start);
 
 	// decreasing this value decreases long it takes in the worst case to unload the module
 	// however, it also causes extra overhead - unblocking to check if we should exist early
 	// convert timer from jiffies to to microseconds
 	ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(timeout);
-	debug_print("Syncing for %li\n", ncm_net->receive_socket->sk->sk_rcvtimeo);
+	debug_print(KERN_INFO "Syncing for %li\n", ncm_net->sync_socket->sk->sk_rcvtimeo);
 
 	while (ncm_net->sync_socket->sk->sk_rcvtimeo > 0) {
 		length = nc_rcvmsg(buff, ncm_net->sync_packetlen, ncm_net->sync_socket, ETH_P_NC_SYNC);
@@ -323,8 +323,10 @@ int ncm_receive_sync(ncm_network_t* ncm_net, int timeout){
 			debug_print(KERN_INFO "CLIENT SYNCED %i", length);
 		}
 		now = now_us();
+		if(start - now + timeout < 0)
+			break;
 		ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
-		debug_print("Syncing for %li", ncm_net->receive_socket->sk->sk_rcvtimeo);
+		debug_print(KERN_INFO "Syncing for %li", ncm_net->sync_socket->sk->sk_rcvtimeo);
 	}
 	return 0;
 }
