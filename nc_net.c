@@ -15,6 +15,60 @@
 #include "netcode_helper.h"
 
 
+#define SKB_PRINT(skb) printk("\n--SKB--\nLine: %i\n", __LINE__); skb_print(skb)
+
+void skb_print(struct sk_buff *skb){
+	struct ethhdr *mh = (struct ethhdr *)skb->head;
+	printk("Debugging skb: %pK\n", skb);
+	if(skb->dev){
+		printk("Network device name: %s\n", skb->dev->name);
+	}
+//	printk("mac_header: %pK\n", skb->mac_header);
+//	printk("mac_len: %i\n", skb->mac_len);
+	if(mh){
+		printk("mac src: %pM\n", mh->h_source);
+		printk("mac dest: %pM\n", mh->h_dest);
+		printk("mac protocol: %X\n", mh->h_proto);
+	}
+	printk("network_header: %pK\n", skb->network_header);
+	printk("transport_header: %pK\n", skb->transport_header);
+	printk("truesize: %i\n", skb->truesize);
+	printk("Socket: %pK\n", skb->sk);
+	printk("Next: %pK\n", skb->next);
+	printk("Prev: %pK\n", skb->prev);
+	printk("Destructor function: %pK\n", skb->destructor);
+	printk("Check sum: %i\n", skb->csum);
+	printk("Checksum start: %i\n", skb->csum_start);
+	printk("Checksum offset: %i\n", skb->csum_offset);
+	printk("Size available: %i\n", skb->avail_size);
+	printk("hdr_len: %i\n", skb->hdr_len);
+	printk("Data location: %i\n", skb->data - skb->head);
+	printk("Tail location: %i\n", skb->tail - skb->head);
+	printk("End location: %i\n", skb->end - skb->head);
+	printk("skb_headlen: %i\n", skb_headlen(skb));
+	printk("Calculated data length: %i\n", skb->tail - skb->data);
+	printk("Total length: %i\n", skb->len);
+	printk("Data length: %i\n", skb->data_len);
+	print_hex_dump(KERN_DEBUG, "data: ", DUMP_PREFIX_NONE, 16, 1, skb->data, skb->len > 100 ? 100 : skb->len, 0);
+	printk("\n");
+}
+
+// nc_sendmsg_hard sets up the source and destination, but you have to set the protocol and data yourself first
+static int nc_sendmsg_hard(u8 *dest_mac, struct net_device *dev, message_t *msg) {
+	int ret;
+	if(msg->skb != 0){
+		memcpy(((struct ethhdr *)msg->skb->head)->h_dest, dest_mac, ETH_ALEN);
+		memcpy(((struct ethhdr *)msg->skb->head)->h_source, dev->dev_addr, ETH_ALEN);
+//		SKB_PRINT(msg->skb);
+		ret = dev->netdev_ops->ndo_start_xmit(msg->skb, dev);
+		msg->skb = 0;
+		return ret;
+	} else {
+		printk(KERN_WARNING "Attempting to send message form empty slot in message space!");
+		return -NC_ENOIF;
+	}
+}
+
 // the message must have enough (ETH_HLEN) space before it for the header!
 static int nc_sendmsg(u8* src_mac, u8 *dest_mac, struct socket *sk, int ifindex, u8 *data, int length, int protocol) {
 	int len;
@@ -44,7 +98,7 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, struct socket *sk, int ifindex,
 	socket_address.sll_family = PF_PACKET;
 	/*we don't use a protocoll above ethernet layer
 	 ->just use anything here*/
-	socket_address.sll_protocol = htons(ETH_P_IP);
+	socket_address.sll_protocol = htons(protocol);
 	/*index of the network device*/
 	socket_address.sll_ifindex = ifindex;
 	/*ARP hardware identifier is ethernet*/
@@ -67,7 +121,7 @@ static int nc_sendmsg(u8* src_mac, u8 *dest_mac, struct socket *sk, int ifindex,
 	/*set the frame header*/
 	memcpy((void*) eh->h_dest, (void*) dest_mac, ETH_ALEN);
 	memcpy((void*) eh->h_source, (void*) src_mac, ETH_ALEN);
-	eh->h_proto = protocol;
+	eh->h_proto = htons(protocol);
 
 	vec.iov_base = (void *) packet;
 
@@ -122,7 +176,7 @@ static int nc_rcvmsg(u8 *buff, int bufflen, struct socket *sk, int protocol) {
 //		debug_print(KERN_INFO "No message.");
 	} else {
 		// only consider the receipt a success if it matches our protocol
-		if(((struct ethhdr*) buff)->h_proto != protocol){
+		if(((struct ethhdr*) buff)->h_proto != htons(protocol)){
 			length = -NC_ENOTNC;
 		} else {
 			//		debug_print(KERN_INFO "msg1: %i", vec.iov_base);
@@ -248,7 +302,7 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 			chan->ifindex = -1;
 		} else {
 			chan->ifindex = dev->ifindex;
-			dev_put(dev);
+			chan->dev = dev;
 		}
 
 		ret = sock_create(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL), &chan->send_socket);
@@ -268,10 +322,10 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 
 	for(i = 0; i < MAX_MESSAGES; i++) {
 		rwlock_init(&ncm_net->message_space.at[i].lock);
-		ncm_net->message_space.at[i].length = 0;
-		ncm_net->message_space.at[i].data = ncm_net->message_space.at[i].buff + ETH_HLEN;
+		ncm_net->message_space.at[i].skb = NULL;
 	}
 
+	ncm_set_mode_hard(ncm_net);
 	ncm_net->receiving_thread = kthread_run(receiving_threadfn, (void*) ncm_net, "NCM network thread");
 }
 
@@ -282,29 +336,108 @@ void destroy_network(ncm_network_t* ncm_net) {
 	for (i = 0; i < MAX_CHANNELS; i++) {
 		chan = &(ncm_net->at[i]);
 		sock_release(chan->send_socket);
+		if(chan->dev){
+			dev_put(chan->dev);
+		}
 	}
 	sock_release(ncm_net->receive_socket);
 }
 
 int ncm_create_message_from_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace, u32 var_id, u32 msg_id){
+	u32 len;
+	struct sk_buff** skb;
+	skb = &ncm_net->message_space.at[msg_id].skb;
 	write_lock(&ncm_net->message_space.at[msg_id].lock);
-	get_variable_data(varspace, var_id, ncm_net->message_space.at[msg_id].data, &ncm_net->message_space.at[msg_id].length);
+	*skb = alloc_skb(ETH_FRAME_LEN, GFP_KERNEL);
+	skb_put((*skb), ETH_FRAME_LEN);
+	get_variable_data(varspace, var_id, (*skb)->head + ETH_HLEN, &len);
+	len = ETH_HLEN + len;
+	(*skb)->data = (*skb)->head;
+	(*skb)->tail = (*skb)->head + len;
+	(*skb)->len = len;
+	((struct ethhdr *)(*skb)->head)->h_proto = htons(ETH_P_NC);
 	write_unlock(&ncm_net->message_space.at[msg_id].lock);
+//	SKB_PRINT((*skb));
 	return 0;
 }
 
-int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
+int ncm_set_mode_hard(ncm_network_t* ncm_net){
+	ncm_net->mode = NC_HARD;
+	return 0;
+}
+
+int ncm_set_mode_soft(ncm_network_t* ncm_net){
+	ncm_net->mode = NC_SOFT;
+	return 0;
+}
+
+int ncm_send_message_hard(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
+	nc_channel_t* channel = &(ncm_net->at[chan]);
+	int ret;
+	if(channel->dev){
+		read_lock(&ncm_net->message_space.at[msg_id].lock);
+		ret = nc_sendmsg_hard(channel->mac, channel->dev, &ncm_net->message_space.at[msg_id]);
+		read_unlock(&ncm_net->message_space.at[msg_id].lock);
+		return ret;
+	} else {
+		printk(KERN_WARNING "Trying to send over non existent device (channel %i)", chan);
+		return -9001;
+	}
+}
+
+int ncm_send_message_soft(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
 	int ret;
 	read_lock(&ncm_net->message_space.at[msg_id].lock);
-	ret = nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].data, ncm_net->message_space.at[msg_id].length, ETH_P_NC);
+	if(ncm_net->message_space.at[msg_id].skb == 0){
+		printk(KERN_WARNING "Attempting to send message form empty slot in message space!");
+		ret = -NC_ENOIF;
+		goto out;
+	}
+	ret = nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].skb->head, ncm_net->message_space.at[msg_id].skb->len, ETH_P_NC);
+	kfree_skb(ncm_net->message_space.at[msg_id].skb); //we didn't give up ownership to a network device, it was coppied, so we have to free it
+out:
 	read_unlock(&ncm_net->message_space.at[msg_id].lock);
 	return ret;
 }
 
-int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
+int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
+	if(ncm_net->mode == NC_HARD){
+		return ncm_send_message_hard(ncm_net, chan, msg_id);
+	} else {
+		return ncm_send_message_soft(ncm_net, chan, msg_id);
+	}
+}
+
+int ncm_send_sync_hard(ncm_network_t* ncm_net, u32 chan){
+	message_t msg;
+	int ret;
+	nc_channel_t* channel = &(ncm_net->at[chan]);
+	if(channel->dev){
+		msg.skb = alloc_skb(ETH_ZLEN, GFP_KERNEL);//allocate at least zlen
+//		SKB_PRINT(msg.skb);
+		skb_put(msg.skb, ETH_HLEN);
+		((struct ethhdr *)msg.skb->head)->h_proto = htons(ETH_P_NC_SYNC);
+//		SKB_PRINT(msg.skb);
+		ret = nc_sendmsg_hard(channel->mac, channel->dev, &msg);
+		return ret;
+	} else {
+		printk(KERN_WARNING "Trying to send over non existent device (channel %i)", chan);
+		return -9001;
+	}
+}
+
+int ncm_send_sync_soft(ncm_network_t* ncm_net, u32 chan){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
 	return nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
+}
+
+int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
+	if(ncm_net->mode == NC_HARD){
+		return ncm_send_sync_hard(ncm_net, chan);
+	} else {
+		return ncm_send_sync_soft(ncm_net, chan);
+	}
 }
 
 // timeout is in microseconds

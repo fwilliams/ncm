@@ -1,6 +1,7 @@
 #include <linux/types.h>
 #include <linux/list.h>
 #include <linux/if_ether.h>
+#include <net/sock.h>
 #include "variable_space.h"
 
 #ifndef NC_NET_H_
@@ -39,11 +40,13 @@
 #define NC_ENOTNC 		38 // the packet received was not a network code packet
 #define NC_ENOTUS 		39 // the packet received was not for us
 
+// modes
+#define NC_HARD 0
+#define NC_SOFT 1
+
 typedef struct message {
-	rwlock_t	lock;
-	u8			buff[ETH_FRAME_LEN];
-	u8			*data;					// points to the beginning of the actual data inside buff (past the header)
-	u32 		length;					// the length of the data, not the whole buffer
+	rwlock_t		lock;
+	struct sk_buff	*skb;
 } message_t;
 
 typedef struct message_space {
@@ -54,14 +57,16 @@ typedef struct nc_message {
 	struct list_head 	list; 					/* kernel's list structure */
 	u8 					value[ETH_DATA_LEN];
 	u32 				length;
+	struct sk_buff 		*skb;
 } nc_message_t;
 
 typedef struct nc_channel {
-	nc_message_t 	message_queue;
-	u8			 	mac[ETH_ALEN];
-	spinlock_t 		lock;
-	u32				ifindex;
-	struct socket*	send_socket;
+	nc_message_t    	message_queue;
+	u8                  mac[ETH_ALEN];
+	spinlock_t          lock;
+	u32                 ifindex;
+	struct net_device 	*dev;
+	struct socket*		send_socket;
 } nc_channel_t;
 
 typedef struct ncm_network {
@@ -70,9 +75,10 @@ typedef struct ncm_network {
 	u8					mac[ETH_ALEN];
 	message_space_t		message_space;
 	u8					sync_packet[ETH_ZLEN];
-	u8					sync_packetlen; // = ETH_ZLEN (includes ETH_HLEN)
+	u32					sync_packetlen; // = ETH_ZLEN (includes ETH_HLEN)
 	struct socket*		receive_socket;
 	struct socket*		sync_socket;
+	u8					mode;
 } ncm_network_t;
 
 typedef struct ncm_net_params {

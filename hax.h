@@ -16,12 +16,14 @@
 void make_program(ncm_instr_t* instructions, ncm_net_params_t* params, int type) {
 	u8 vm1_mac[] = { 0x08, 0x00, 0x27, 0x46, 0xBC, 0x02 };
 	u8 vm2_mac[] = { 0x08, 0x00, 0x27, 0xC0, 0x56, 0x5B };
-	u8 devname1[] = "enp0s3";
-	u8 devname2[] = "enp0s3";
+//	u8 vm1_mac[] = {0x0a, 0x00, 0x27, 0x00, 0x00, 0x00};
+//	u8 vm2_mac[] = {0x0a, 0x00, 0x27, 0x00, 0x00, 0x00};
+	u8 devname1[16] = "eth0";
+	u8 devname2[16] = "eth0";
 
 	switch(type) {
 	case TYPE_ARCH1:
-		memcpy(params->net_device_name[0], devname1, 6);
+		memcpy(params->net_device_name[0], devname1, 16);
 		memcpy(params->mac_address, vm1_mac, ETH_ALEN);
 		memcpy(params->channel_mac[0], vm2_mac, ETH_ALEN);
 
@@ -61,7 +63,7 @@ void make_program(ncm_instr_t* instructions, ncm_net_params_t* params, int type)
 		break;
 
 	case TYPE_ARCH2:
-		memcpy(params->net_device_name[0], devname2, 6);
+		memcpy(params->net_device_name[0], devname2, 16);
 		memcpy(params->mac_address, vm2_mac, ETH_ALEN);
 		memcpy(params->channel_mac[0], vm1_mac, ETH_ALEN);
 
