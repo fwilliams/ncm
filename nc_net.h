@@ -101,4 +101,8 @@ int ncm_send_sync(ncm_network_t* ncm_net, u32 chan);
 
 int ncm_receive_sync(ncm_network_t* ncm_net, s64 timeout);
 
+int ncm_set_mode_hard(ncm_network_t* ncm_net);
+
+int ncm_set_mode_soft(ncm_network_t* ncm_net);
+
 #endif /* NC_NET_H_ */

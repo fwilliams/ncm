@@ -7,6 +7,7 @@
 #include "interpreter.h"
 #include "guards.h"
 #include "hax.h"
+#include "sysfs.h"
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Francis Williams, 2013");
@@ -18,6 +19,7 @@ static ncm_interpreter_t ncm_interp;
 static ncm_instr_t instructions[PROGRAM_LEN];
 static ncm_program_t program;
 static ncm_interp_params_t	interp_params;
+static ncm_sysfs_t sysfs;
 
 static int chrdev_major;
 
@@ -64,6 +66,7 @@ static struct file_operations fops = {
 
 
 int init_module() {
+	int sysfs_ret;
 
 #ifdef VM1
 	make_program(instructions, &interp_params.network, TYPE_ARCH1);
@@ -78,17 +81,23 @@ int init_module() {
 	chrdev_major = register_chrdev(0, VARSPACE_CHRDEV_NAME, &fops);
 	debug_print("Registered char device with major number %d", chrdev_major);
 
+	sysfs_ret = nc_init_sysfs(&sysfs, &program);
 
 	start_interpreter(&ncm_interp, &program, &interp_params);
 	debug_print("NCM started at time %llu", now_us() );
 
-	return 0;
+	return sysfs_ret;
 }
 
 void cleanup_module(void) {
 	stop_interpreter(&ncm_interp);
 
+	ncm_sysfs_cleanup(&sysfs);
+
 	unregister_chrdev(chrdev_major, VARSPACE_CHRDEV_NAME);
 
 	debug_print("NCM ended at time %llu", now_us() );
 }
+
+
+

@@ -5,7 +5,7 @@ module_name 		:= netcode$(vm)
 varpsace_major_num	:= 250
 
 obj-m				:= $(module_name).o
-$(module_name)-y	:= netcode_helper.o future_queue.o variable_space.o counter.o guards.o nc_net.o interpreter.o netcode_module.o
+$(module_name)-y	:= netcode_helper.o future_queue.o variable_space.o counter.o sysfs.o guards.o nc_net.o interpreter.o netcode_module.o
 ccflags-y 			:= -D__DEBUG__ -DVM$(vm) -Wframe-larger-than=9000
 
 all:
