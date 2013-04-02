@@ -18,6 +18,8 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 		// TODO: return the state of the interpreter: running, stopped or whatever
 		memcpy(buf, "running\n", sizeof("running\n"));
 		return sizeof("running\n");
+	} else {
+		return 0;
 	}
 //    return scnprintf(buf, PAGE_SIZE, "%d\n", a->value);
 }
