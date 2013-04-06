@@ -160,6 +160,19 @@ static enum instr_result handle_add_to_counter(ncm_interpreter_t* interpreter) {
 	return INSTR_OK;
 }
 
+static enum instr_result handle_sub_from_counter(ncm_interpreter_t* interpreter) {
+	u32 counter_id = interpreter->program[interpreter->program_counter].args[0];
+	u32 amount = interpreter->program[interpreter->program_counter].args[1];
+
+	sub_from_counter(&interpreter->counters, counter_id, amount);
+
+	debug_print("SUB_FROM_COUNTER instruction reached at PC = %d with args %d, %d",
+			interpreter->program_counter,
+			counter_id, amount);
+
+	return INSTR_OK;
+}
+
 static enum instr_result handle_set_counter(ncm_interpreter_t* interpreter) {
 	u32 counter_id = interpreter->program[interpreter->program_counter].args[0];
 	u32 value = interpreter->program[interpreter->program_counter].args[1];
@@ -283,6 +296,9 @@ static int interpreter_threadfn(void* data) {
 			break;
 		case ADD_TO_COUNTER:
 			instr_res = handle_add_to_counter(interpreter);
+			break;
+		case SUB_FROM_COUNTER:
+			instr_res = handle_sub_from_counter(interpreter);
 			break;
 		case SET_COUNTER:
 			instr_res = handle_set_counter(interpreter);

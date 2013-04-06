@@ -30,4 +30,7 @@ void set_counter(ncm_counter_array_t* carray, u32 counter_id, u32 value);
 /* Adds amount to the counter at counter_id */
 void add_to_counter(ncm_counter_array_t* carray, u32 counter_id, u32 amount);
 
+/* Subtracts amount from the counter at counter_id */
+void sub_from_counter(ncm_counter_array_t* carray, u32 counter_id, u32 amount);
+
 #endif /* COUNTER_H_ */
