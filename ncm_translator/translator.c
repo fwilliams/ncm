@@ -7,7 +7,6 @@
  */
 
 #include "translator.h"
-#include <stdio.h>
 
 #define MASK4					(uint32_t) 0x0000F
 #define MASK8					(uint32_t) 0x000FF

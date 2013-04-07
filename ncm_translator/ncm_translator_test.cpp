@@ -8,8 +8,8 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE ncm_translator
 
-#include <boost/test/unit_test.hpp>
 #include <stdint.h>
+#include <boost/test/unit_test.hpp>
 #include "translator.h"
 
 BOOST_AUTO_TEST_CASE(test_future_is_translated_correctly) {
