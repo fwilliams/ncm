@@ -108,4 +108,9 @@ int start_interpreter(ncm_interpreter_t* interpreter, ncm_program_t* program, nc
  */
 int stop_interpreter(ncm_interpreter_t* interpreter);
 
+/*
+ * Checks if the interpreter is running
+ */
+bool is_running(ncm_interpreter_t* interpreter);
+
 #endif /* INTERPRETER_H_ */

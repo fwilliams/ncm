@@ -374,7 +374,12 @@ int start_interpreter(ncm_interpreter_t* interpreter, ncm_program_t* program, nc
 int stop_interpreter(ncm_interpreter_t* interpreter) {
 	destroy_network(&interpreter->network);
 	kthread_stop(interpreter->thread);
+	interpreter->thread = NULL;
 	return 0;
+}
+
+bool is_running(ncm_interpreter_t* interpreter) {
+	return interpreter->thread != NULL;
 }
 
 
