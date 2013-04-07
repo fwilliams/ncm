@@ -348,6 +348,7 @@ int init_interpreter(ncm_interpreter_t* interpreter) {
 	interpreter->program_counter = 0;
 	init_future_queue(&interpreter->future_queue);
 	init_variable_space(&interpreter->variable_space);
+	interpreter->thread = NULL;
 
 	return 0;
 }
