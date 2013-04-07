@@ -225,11 +225,11 @@ static enum instr_result handle_receive(struct interpreter* interpreter) {
 			interpreter->program_counter,
 			chan_id, var_id);
 
-	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space, chan_id, var_id) >= 0) {
-		return INSTR_OK;
-	} else {
-		return INSTR_ERROR;
+	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space, chan_id, var_id) < 0) {
+		set_error(interpreter, ERR_BIT_RCV_FAULT);
 	}
+
+	return INSTR_OK;
 }
 
 // TODO: broadcast the sync instead of sending it on a specific channel
@@ -245,7 +245,9 @@ static enum instr_result handle_sync(struct interpreter* interpreter) {
 	if(sync_type == SYNC_MASTER){
 		ncm_send_sync(&interpreter->network, chan_id);
 	} else {
-		ncm_receive_sync(&interpreter->network, chan_id);
+		if(ncm_receive_sync(&interpreter->network, chan_id) < 0) {
+			set_error(interpreter, ERR_BIT_SYNC_TIMEOUT);
+		}
 	}
 
 	return INSTR_OK;

@@ -54,6 +54,8 @@
 #define PROGRAM_ERROR	1
 #define INVALID_INSTR	2
 
+#define ERR_BIT_SYNC_TIMEOUT	15
+#define ERR_BIT_RCV_FAULT		10
 /*
  * A single Network Code instruction
  */
