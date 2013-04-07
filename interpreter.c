@@ -338,6 +338,20 @@ static int interpreter_threadfn(void* data) {
 	return PROGRAM_OK;
 }
 
+
+/*
+ * Initializes the interpreter passed in.
+ * This will create the thread the interpreter runs in
+ * and set the program counter to 0.
+ */
+int init_interpreter(ncm_interpreter_t* interpreter) {
+	interpreter->program_counter = 0;
+	init_future_queue(&interpreter->future_queue);
+	init_variable_space(&interpreter->variable_space);
+
+	return 0;
+}
+
 /*
  * Initializes the interpreter passed in with the given program.
  * This will create and start a thread to run the interpreter in
@@ -347,10 +361,10 @@ int start_interpreter(ncm_interpreter_t* interpreter, ncm_program_t* program, nc
 	interpreter->program_counter = 0;
 	interpreter->program_length = program->length;
 	interpreter->program = program->instructions;
-	init_future_queue(&interpreter->future_queue);
-	init_variable_space(&interpreter->variable_space);
+
 	init_network(&interpreter->network, &params->network);
 	interpreter->thread = kthread_run(interpreter_threadfn, (void*) interpreter, "NCM interpreter");
+
 	return 0;
 }
 

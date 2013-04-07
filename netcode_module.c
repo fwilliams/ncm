@@ -83,6 +83,7 @@ int init_module() {
 
 	sysfs_ret = nc_init_sysfs(&sysfs, &program);
 
+	init_interpreter(&ncm_interp);
 	start_interpreter(&ncm_interp, &program, &interp_params);
 	debug_print("NCM started at time %llu", now_us() );
 

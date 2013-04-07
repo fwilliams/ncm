@@ -92,16 +92,20 @@ typedef struct interpreter {
 } ncm_interpreter_t;
 
 /*
- * Initializes the interpreter passed in with the given program.
- * This will create and start a thread to run the interpreter in
+ * Initializes the interpreter passed in.
+ * This will create the thread the interpreter runs in
  * and set the program counter to 0.
+ */
+int init_interpreter(ncm_interpreter_t* interpreter);
+
+/*
+ * Starts the interpreter thread with the given program and parameters after resetting the interpreter state.
  */
 int start_interpreter(ncm_interpreter_t* interpreter, ncm_program_t* program, ncm_interp_params_t* params);
 
 /*
- * Stops the interpreter thread and cleans up the interpreter
+ * Stops the interpreter thread.
  */
 int stop_interpreter(ncm_interpreter_t* interpreter);
-
 
 #endif /* INTERPRETER_H_ */
