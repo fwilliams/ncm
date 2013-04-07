@@ -7,8 +7,8 @@
 
 #include "guards.h"
 
-bool handle_chanel_xy_rcv_buf_empty(u32 channel_id) {
-	return false;
+bool handle_chanel_xy_rcv_buf_empty(ncm_interpreter_t* interpreter, u32 channel_id) {
+	return ncm_rx_buff_empty(&interpreter->network, channel_id);
 }
 
 bool handle_send_buffer_empty(void) {
@@ -60,7 +60,7 @@ bool test_guard(ncm_interpreter_t* interpreter, u32 guard_id, u32* args, u32* st
 	case ALWAYS_FALSE:
 		return false;
 	case CHANNEL_XY_RCV_BUF_EMTPY:
-		return handle_chanel_xy_rcv_buf_empty(args[0]);
+		return handle_chanel_xy_rcv_buf_empty(interpreter, args[0]);
 	case SEND_BUFFER_EMPTY:
 		return handle_send_buffer_empty();
 	case TEST_COUNT:
