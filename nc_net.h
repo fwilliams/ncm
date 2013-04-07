@@ -11,10 +11,6 @@
 #define MAX_CHANNELS 1
 #endif
 
-#ifndef MAX_DEVNAME_LENGTH
-#define MAX_DEVNAME_LENGTH 10
-#endif
-
 /*
  * Maximum number of bytes per message
  */
@@ -71,7 +67,8 @@ typedef struct nc_channel {
 } nc_channel_t;
 
 typedef struct ncm_network {
-	nc_channel_t 		at[MAX_CHANNELS];
+	u32 				channels;
+	nc_channel_t*       at;
 	struct task_struct* receiving_thread;
 	u8					mac[ETH_ALEN];
 	message_space_t		message_space;
@@ -83,9 +80,10 @@ typedef struct ncm_network {
 } ncm_network_t;
 
 typedef struct ncm_net_params {
-	u8	net_device_name[MAX_CHANNELS][MAX_DEVNAME_LENGTH];
+	u32 channels;
+	u8	(*net_device_name)[IFNAMSIZ];
 	u8	mac_address[ETH_ALEN];
-	u8	channel_mac[MAX_CHANNELS][ETH_ALEN];
+	u8	(*channel_mac)[ETH_ALEN];
 } ncm_net_params_t;
 
 void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params);

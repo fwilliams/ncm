@@ -16,7 +16,6 @@ MODULE_DESCRIPTION("Network Code interpreter module");
 #define PROGRAM_LEN 16
 
 static ncm_interpreter_t ncm_interp;
-static ncm_instr_t instructions[PROGRAM_LEN];
 static ncm_program_t program;
 static ncm_interp_params_t	interp_params;
 static ncm_sysfs_t sysfs;
@@ -69,31 +68,33 @@ int init_module() {
 	int sysfs_ret;
 
 #ifdef VM1
-	make_program(instructions, &interp_params.network, TYPE_ARCH1);
+	make_program(&program, &interp_params.network, TYPE_ARCH1);
 #endif
 #ifdef VM2
-	make_program(instructions, &interp_params.network, TYPE_ARCH2);
+	make_program(&program, &interp_params.network, TYPE_ARCH2);
 #endif
 
-	program.instructions = instructions;
-	program.length = PROGRAM_LEN;
+//	program.instructions = instructions;
+//	program.length = PROGRAM_LEN;
 
 	chrdev_major = register_chrdev(0, VARSPACE_CHRDEV_NAME, &fops);
 	debug_print("Registered char device with major number %d", chrdev_major);
 
-	sysfs_ret = nc_init_sysfs(&sysfs, &program);
-
 	init_interpreter(&ncm_interp);
+
+	sysfs_ret = nc_init_sysfs(&sysfs, &ncm_interp, &program, &interp_params);
+
 	start_interpreter(&ncm_interp, &program, &interp_params);
-	debug_print("NCM started at time %llu", now_us() );
 
 	return sysfs_ret;
 }
 
 void cleanup_module(void) {
-	stop_interpreter(&ncm_interp);
 
 	ncm_sysfs_cleanup(&sysfs);
+
+	if(is_running(&ncm_interp))
+		stop_interpreter(&ncm_interp);
 
 	unregister_chrdev(chrdev_major, VARSPACE_CHRDEV_NAME);
 

@@ -289,7 +289,9 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 	struct net_device *dev;
 	nc_channel_t* chan;
 
-	for (i = 0; i < MAX_CHANNELS; i++) {
+	ncm_net->channels = params->channels;
+	ncm_net->at = kmalloc(ncm_net->channels * sizeof(nc_channel_t), GFP_KERNEL);
+	for (i = 0; i < ncm_net->channels; i++) {
 		chan = &(ncm_net->at[i]);
 		spin_lock_init(&chan->lock);
 		INIT_LIST_HEAD(&chan->message_queue.list);
@@ -340,6 +342,7 @@ void destroy_network(ncm_network_t* ncm_net) {
 			dev_put(chan->dev);
 		}
 	}
+	kfree(ncm_net->at);
 	sock_release(ncm_net->receive_socket);
 }
 
