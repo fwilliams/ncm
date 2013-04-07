@@ -39,6 +39,7 @@
 #define NC_ETOOBIG	 	37 // the message to send is bigger than an ethernet frame
 #define NC_ENOTNC 		38 // the packet received was not a network code packet
 #define NC_ENOTUS 		39 // the packet received was not for us
+#define NC_ETIMEOUT 	40 // sync timed out
 
 // modes
 #define NC_HARD 0

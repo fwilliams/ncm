@@ -460,7 +460,7 @@ int ncm_receive_sync(ncm_network_t* ncm_net, s64 timeout){
 			debug_print("Failed to sync (status: %i)", length);
 			now = now_us();
 			if(start - now + timeout < 0)
-				return 0;
+				return -NC_ETIMEOUT;
 			ncm_net->sync_socket->sk->sk_rcvtimeo = usecs_to_jiffies(start - now + timeout);
 			debug_print("Syncing for %li", ncm_net->sync_socket->sk->sk_rcvtimeo);
 		} else {
