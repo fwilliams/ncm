@@ -284,6 +284,15 @@ int ncm_receive_message_to_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace,
 	return 0;
 }
 
+int ncm_rx_buff_empty(ncm_network_t* ncm_net, u32 chan){
+	int empty;
+	nc_channel_t *channel = &(ncm_net->at[chan]);
+	spin_lock(&channel->lock);
+	empty = list_empty(&channel->message_queue.list);
+	spin_unlock(&channel->lock);
+	return empty;
+}
+
 void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 	int i, ret;
 	struct net_device *dev;
