@@ -6,6 +6,7 @@
  */
 
 #include "variable_space.h"
+#include "netcode_helper.h"
 
 /* Initializes a new variable_space */
 int init_variable_space(ncm_varspace_t* varspace) {
@@ -165,11 +166,39 @@ bool handle_test_var_is_nonzero(ncm_varspace_t* varspace, u32 var_id) {
 }
 
 bool handle_test_var_even_parity(ncm_varspace_t* varspace, u32 var_id) {
-	return false;
+	u32 parity, i;
+	variable_t *var;
+
+	rcu_read_lock();
+
+	var = &(varspace->at[var_id]);
+	parity = 0;
+
+	for(i = 0; i < rcu_dereference(var->read_buf)->length; i++) {
+		parity += get_parity(rcu_dereference(var->read_buf)->data[i]);
+	}
+
+	rcu_read_unlock();
+
+	return !(parity & 1);
 }
 
 bool handle_test_var_odd_parity(ncm_varspace_t* varspace, u32 var_id) {
-	return false;
+	u32 parity, i;
+	variable_t *var;
+
+	rcu_read_lock();
+
+	var = &(varspace->at[var_id]);
+	parity = 0;
+
+	for(i = 0; i < rcu_dereference(var->read_buf)->length; i++) {
+		parity += get_parity(rcu_dereference(var->read_buf)->data[i]);
+	}
+
+	rcu_read_unlock();
+
+	return (parity & 1);
 }
 /********************************************************************
  * End test_variable() handlers

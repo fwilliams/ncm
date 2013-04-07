@@ -18,3 +18,19 @@ u64 now_us(void) {
 	do_gettimeofday(&helper_timeval);
 	return helper_timeval.tv_sec * USEC_PER_SEC + helper_timeval.tv_usec;
 }
+
+/*
+ * Returns 0 if even parity, 1 if odd parity
+ */
+u8 get_parity(u8 byte) {
+	u8 i;
+	u8 acc;
+
+	acc = 0;
+
+	for(i = 0; i < 8; i++) {
+		acc += (byte >> i) & 1;
+	}
+
+	return acc & 1;
+}

@@ -24,4 +24,9 @@
  */
 u64 now_us(void);
 
+/*
+ * Returns 0 if even parity, 1 if odd parity
+ */
+u8 get_parity(u8 byte);
+
 #endif /* NETCODE_HELPER_H_ */
