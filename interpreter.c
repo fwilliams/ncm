@@ -379,10 +379,24 @@ int stop_interpreter(ncm_interpreter_t* interpreter) {
 	return 0;
 }
 
+/*
+ * Checks if the interpreter is running
+ */
 bool is_running(ncm_interpreter_t* interpreter) {
 	return interpreter->thread != NULL;
 }
 
+/*
+ * Checks if an error bit has been set
+ */
+bool is_error_set(ncm_interpreter_t* interpreter, u16 error_mask) {
+	return (interpreter->error_bits & error_mask) != 0;
+}
 
-
-
+/*
+ * Sets the error bit given by bit.
+ * E.g. if bit = 15, the 15th bit will be set to 1
+ */
+void set_error(ncm_interpreter_t* interpreter, u8 bit) {
+	interpreter->error_bits |= (1 << bit);
+}

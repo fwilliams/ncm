@@ -89,6 +89,7 @@ typedef struct interpreter {
 	ncm_counter_array_t		counters;			/* Array of counters */
 	ncm_network_t			network;			/* NCM network abstraction */
 	struct task_struct*		thread;				/* Handle to the interpreters thread */
+	u16						error_bits;			/* Bit string of errors */
 } ncm_interpreter_t;
 
 /*
@@ -112,5 +113,16 @@ int stop_interpreter(ncm_interpreter_t* interpreter);
  * Checks if the interpreter is running
  */
 bool is_running(ncm_interpreter_t* interpreter);
+
+/*
+ * Checks if an error bit has been set
+ */
+bool is_error_set(ncm_interpreter_t* interpreter, u16 error_mask);
+
+/*
+ * Sets the error bit given by bit.
+ * E.g. if bit = 15, the 15th bit from the left will be set to 1
+ */
+void set_error(ncm_interpreter_t* interpreter, u8 bit);
 
 #endif /* INTERPRETER_H_ */

@@ -19,8 +19,9 @@ bool handle_test_count(ncm_interpreter_t* interpreter, u32 counter_id, u32 test_
 	return (interpreter->counters.at[counter_id] == test_value);
 }
 
-bool handle_status_test(u32 test_value) {
-	return false;
+bool handle_status_test(ncm_interpreter_t* interpreter, u32 test_value) {
+	u16 mask = test_value & 0x0FFFF;
+	return is_error_set(interpreter, mask);
 }
 
 bool handle_equal_var_var(ncm_interpreter_t* interpreter, u32 var_id_1, u32 var_id_2) {
@@ -65,7 +66,7 @@ bool test_guard(ncm_interpreter_t* interpreter, u32 guard_id, u32* args, u32* st
 	case TEST_COUNT:
 		return handle_test_count(interpreter, args[0], args[1]);
 	case STATUS_TEST:
-		return handle_status_test(args[0]);
+		return handle_status_test(interpreter, args[0]);
 	case EQUAL_VAR_VAR:
 		return handle_equal_var_var(interpreter, args[0], args[1]);
 	case GREATER_VAR_VAR:
