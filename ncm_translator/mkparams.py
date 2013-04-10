@@ -15,7 +15,6 @@ sys.stdout.write(struct.pack('I6s', len(params['channels']),
 for param in params['channels']:
     # wirte our own mac
     # the device name is padded to 16 characters
-    sys.stdout.write(param['dev'] +
-                    ("\x00" * (16-len(param['dev']))))
-    sys.stdout.write(format_mac(param['mac']))
+    sys.stdout.write(struct.pack('16s6s', str(param['dev']),
+                     format_mac(param['mac'])))
     pass
