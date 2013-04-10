@@ -388,7 +388,7 @@ int ncm_send_message_hard(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 	int ret;
 	if(channel->dev){
 		read_lock(&ncm_net->message_space.at[msg_id].lock);
-		ret = nc_sendmsg_hard(channel->mac, channel->dev, &ncm_net->message_space.at[msg_id]);
+		ret = nc_sendmsg_hard("\xFF\xFF\xFF\xFF\xFF\xFF", channel->dev, &ncm_net->message_space.at[msg_id]);
 		read_unlock(&ncm_net->message_space.at[msg_id].lock);
 		return ret;
 	} else {
@@ -406,7 +406,7 @@ int ncm_send_message_soft(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 		ret = -NC_ENOIF;
 		goto out;
 	}
-	ret = nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].skb->head, ncm_net->message_space.at[msg_id].skb->len, ETH_P_NC);
+	ret = nc_sendmsg(ncm_net->mac, "\xFF\xFF\xFF\xFF\xFF\xFF", channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].skb->head, ncm_net->message_space.at[msg_id].skb->len, ETH_P_NC);
 	kfree_skb(ncm_net->message_space.at[msg_id].skb); //we didn't give up ownership to a network device, it was coppied, so we have to free it
 out:
 	read_unlock(&ncm_net->message_space.at[msg_id].lock);
