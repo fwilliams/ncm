@@ -27,11 +27,13 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 	} else if(memcmp(attr->name, "params", 6) == 0){
 		channels = a->ncm_sysfs->interp_params->network.channels;
 		memcpy(buf, a->ncm_sysfs->interp_params, sizeof(ncm_interp_params_t));
-		memcpy(buf + sizeof(ncm_interp_params_t), a->ncm_sysfs->interp_params->network.net_device_name,
+		// copy to the end of the known size part, overwriting all the pointers we don't want to save
+		// note that net_device_name has to be the first pointer in unknown size part
+		memcpy(buf + offsetof(ncm_net_params_t, net_device_name), a->ncm_sysfs->interp_params->network.net_device_name,
 				channels * IFNAMSIZ);
-		memcpy(buf + sizeof(ncm_interp_params_t) + channels * IFNAMSIZ, a->ncm_sysfs->interp_params->network.mac_address,
+		memcpy(buf + offsetof(ncm_net_params_t, net_device_name) + channels * IFNAMSIZ, a->ncm_sysfs->interp_params->network.mac_address,
 				channels * ETH_ALEN);
-		return sizeof(ncm_interp_params_t) + channels * (IFNAMSIZ + ETH_ALEN);
+		return offsetof(ncm_net_params_t, net_device_name) + channels * (IFNAMSIZ + ETH_ALEN);
 	} else {
 		return 0;
 	}
