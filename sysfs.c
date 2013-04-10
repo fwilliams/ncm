@@ -17,7 +17,7 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 		memcpy(buf, a->ncm_sysfs->program->instructions, sizeof(ncm_instr_t) * a->ncm_sysfs->program->length);
 		return sizeof(ncm_instr_t) * a->ncm_sysfs->program->length;
 	} else if(memcmp(attr->name, "control", 7) == 0){
-		if(!is_running(a->ncm_sysfs->ncm_interp)){
+		if(is_running(a->ncm_sysfs->ncm_interp)){
 			memcpy(buf, "running\n", sizeof("running\n"));
 			return sizeof("running\n");
 		} else {
@@ -69,7 +69,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 				memcpy(network->channel_mac, buf + sizeof(ncm_interp_params_t) +
 						IFNAMSIZ * channels, ETH_ALEN * channels);
 			} else {
-				//TODO: write an erorr somewhere
+				//TODO: write an error somewhere
 			}
 		} else {
 			//TODO: write an error somewhere
@@ -85,13 +85,15 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 			a->ncm_sysfs->program->instructions = kmalloc(len, GFP_KERNEL);
 			// copy the given data into it
 			memcpy(a->ncm_sysfs->program->instructions, buf, len);
+		} else {
+			//TODO: write an error somewhere
 		}
 	} else if(memcmp(attr->name, "control", 7) == 0){
 		// if you write "run" into the command
-		if(len == 4 && memcmp(buf, "run", 3) == 0){
+		if(memcmp(buf, "run", 3) == 0){
 			start_interpreter(a->ncm_sysfs->ncm_interp, a->ncm_sysfs->program, a->ncm_sysfs->interp_params);
 		// if you write "stop" into the command
-		} else if (len == 5 && memcmp(buf, "stop", 4) == 0){
+		} else if (memcmp(buf, "stop", 4) == 0){
 			stop_interpreter(a->ncm_sysfs->ncm_interp);
 		} else {
 			return len;
