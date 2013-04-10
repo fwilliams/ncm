@@ -22,7 +22,7 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 			return sizeof("running\n");
 		} else {
 			memcpy(buf, "not running\n", sizeof("not running\n"));
-			return sizeof("not running\n");
+			return sizeof("stopped\n");
 		}
 	} else if(memcmp(attr->name, "params", 6) == 0){
 		channels = a->ncm_sysfs->interp_params->network.channels;
@@ -31,7 +31,7 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 		// note that net_device_name has to be the first pointer in unknown size part
 		memcpy(buf + offsetof(ncm_net_params_t, net_device_name), a->ncm_sysfs->interp_params->network.net_device_name,
 				channels * IFNAMSIZ);
-		memcpy(buf + offsetof(ncm_net_params_t, net_device_name) + channels * IFNAMSIZ, a->ncm_sysfs->interp_params->network.mac_address,
+		memcpy(buf + offsetof(ncm_net_params_t, net_device_name) + channels * IFNAMSIZ, a->ncm_sysfs->interp_params->network.channel_mac,
 				channels * ETH_ALEN);
 		return offsetof(ncm_net_params_t, net_device_name) + channels * (IFNAMSIZ + ETH_ALEN);
 	} else {
