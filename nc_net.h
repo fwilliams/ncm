@@ -81,8 +81,8 @@ typedef struct ncm_network {
 
 typedef struct ncm_net_params {
 	u32 channels;
-	u8	(*net_device_name)[IFNAMSIZ];
 	u8	mac_address[ETH_ALEN];
+	u8	(*net_device_name)[IFNAMSIZ];
 	u8	(*channel_mac)[ETH_ALEN];
 } ncm_net_params_t;
 
