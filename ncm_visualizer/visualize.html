@@ -1,9 +1,107 @@
 <html>
 <head>
 	<title>Network Code visualization</title>
+	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+	<style type="text/css">
+	.stream {
+	}
+	.stream:hover {
+	}
+	.instr {
+		border: 1px solid black;
+		overflow: hidden;
+		/*display: inline-block;*/
+	}
+
+	.FUTURE{
+		background-color:red;
+		color:black;
+	}
+	.HALT{
+		background-color:green;
+		color:black;
+	}
+	.IF{
+		background-color:blue;
+		color:black;
+	}
+	.MODE{
+		background-color:yellow;
+		color:black;
+	}
+	.CREATE{
+		background-color:magenta;
+		color:black;
+	}
+	.DESTROY{
+		background-color:cyan;
+		color:black;
+	}
+	.SEND{
+		background-color:pink;
+		color:black;
+	}
+	.RECEIVE{
+		background-color:white;
+		color:black;
+	}
+	.SYNC{
+		background-color:yellowgreen;
+		color:black;
+	}
+	.HANDLE{
+		background-color:white;
+		color:black;
+	}
+	.NOP:{
+		background-color:white;
+		color:black;
+	}
+	.SET_COUNTER{
+		background-color:white;
+		color:black;
+	}
+	.ADD_TO_COUNTER{
+		background-color:white;
+		color:black;
+	}
+	.SUB_FROM_COUNTER{
+		background-color:white;
+		color:black;
+	}
+	.SUB_FROM_COUNTER{
+		background-color:white;
+		color:black;
+	}
+	.LOOP{
+		background-color:black;
+		color:white;
+	}
+	.PAUSE{
+		background-color:black;
+		color:white;
+	}
+
+	.left {
+		float:left;
+	}
+	.clear {
+		clear:both;
+	}
+	a {
+		cursor: pointer;
+	}
+	</style>
 </head>
 <body>
+<div id="dialog" style="display:none"></div>
+<div><a id="zoomin">+</a> <a id="zoomout">-</a></div>
 <div id="container"></div>
+<div id="template" style="display:none">
+{{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px">{{instr.instr}}</div>{{/.}}</div>{{/.}}
+</div>
+<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
 <script src="mustache.js"></script>
 <script src="visualize.js"></script>
 <script src="data.json"></script>

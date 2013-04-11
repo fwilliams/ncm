@@ -41,20 +41,20 @@ while instr != "":
     instr_arr.append(parsed)
     instr = f.read(instr_size)
 
-lengths = {'FUTURE': 1,
-           'HALT': 1,
-           'IF': 1,
-           'MODE': 1,
-           'CREATE': 1,
-           'DESTROY': 1,
-           'SEND': 1,
-           'RECEIVE': 1,
-           'SYNC': 1,
-           'HANDLE': 1,
-           'NOP': 1,
-           'SET_COUNTER': 1,
-           'ADD_TO_COUNTER': 1,
-           'SUB_FROM_COUNTER': 1}
+lengths = {'FUTURE': 1000,
+           'HALT': 1000,
+           'IF': 1000,
+           'MODE': 1000,
+           'CREATE': 1000,
+           'DESTROY': 1000,
+           'SEND': 1000,
+           'RECEIVE': 1000,
+           'SYNC': 1000,
+           'HANDLE': 1000,
+           'NOP': 1000,
+           'SET_COUNTER': 1000,
+           'ADD_TO_COUNTER': 1000,
+           'SUB_FROM_COUNTER': 1000}
 
 
 class TreeBuilder:
@@ -73,6 +73,7 @@ class TreeBuilder:
         tree['instr'] = instr
         tree['length'] = lengths[instr['instr']]
         tree['children'] = []
+        children = tree['children']
 
         if(instr['instr'] == 'CREATE'):
             pass
@@ -90,6 +91,14 @@ class TreeBuilder:
             self.future_queue = sorted(self.future_queue,
                                        key=lambda k: k['arg0'])
             next_future = self.future_queue.pop()
+
+            pause = {}
+            pause['instr'] = "PAUSE"
+            pause['length'] = next_future['arg0'] - 0  # 0 = now - TODO
+            pause['children'] = []
+            children.append(pause)
+            children = pause['children']
+
             next = next_future['arg1']
         else:
             pass
@@ -97,13 +106,13 @@ class TreeBuilder:
         if isinstance(next, (list, tuple)):
             for n in next:
                 if n <= i:
-                    tree['children'].append('LOOP')
+                    children.append('LOOP')
                 elif n < len(self.instrs):
-                    tree['children'].append(self.step(n))
+                    children.append(self.step(n))
         elif next <= i:
-            tree['children'].append('LOOP')
+            children.append('LOOP')
         elif next < len(self.instrs):
-            tree['children'].append(self.step(next))
+            children.append(self.step(next))
         return tree
 
 
