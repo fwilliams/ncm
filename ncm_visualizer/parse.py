@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-from pprint import pprint
 import re
 import struct
+import json
+import sys
 
 # load the defines from the original source - the interpreter header
 
@@ -24,7 +25,8 @@ while line:
 
 # interpret the given program and build a tree of its execution
 
-f = open('../samples/vm1.ncm')
+#f = open('../samples/vm1.ncm')
+f = sys.stdin
 
 instr_size = 20
 instr_arr = []
@@ -105,4 +107,4 @@ class TreeBuilder:
 
 treeBuilder = TreeBuilder(instr_arr)
 
-pprint(treeBuilder.build_tree())
+json.dump(treeBuilder.build_tree(), sys.stdout)
