@@ -25,6 +25,7 @@ int main(int argc, char** argv) {
 			break; // We've reached the end of the input. Stop.
 		}
 
+		// On X86/X64 bytes come in the opposite endianness
 		swap_endian(in_bytecode);
 
 		// Translate the bytecode

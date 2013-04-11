@@ -189,26 +189,44 @@ ncm_instr_t pack_count(uint32_t bytecode) {
 ncm_instr_t get_instruction(uint32_t bytecode) {
 	uint32_t type = (bytecode >> 28);
 
+	ncm_instr_t instr;
+
+	instr.args[0] = 0;
+	instr.args[1] = 0;
+	instr.args[2] = 0;
+	instr.args[3] = 0;
+
 	switch(type) {
 	case HW_FUTURE:
-		return pack_future(bytecode);
+		instr = pack_future(bytecode);
+		break;
 	case HW_HALT:
-		return pack_halt(bytecode);
+		instr = pack_halt(bytecode);
+		break;
 	case HW_IF:
-		return pack_if(bytecode);
+		instr = pack_if(bytecode);
+		break;
 	case HW_CREATE:
-		return pack_create(bytecode);
+		instr = pack_create(bytecode);
+		break;
 	case HW_SEND:
-		return pack_send(bytecode);
+		instr = pack_send(bytecode);
+		break;
 	case HW_RECEIVE:
-		return pack_receive(bytecode);
+		instr = pack_receive(bytecode);
+		break;
 	case HW_NOP:
-		return pack_nop(bytecode);
+		instr = pack_nop(bytecode);
+		break;
 	case HW_SYNC:
-		return pack_sync(bytecode);
+		instr = pack_sync(bytecode);
+		break;
 	case HW_COUNT:
-		return pack_count(bytecode);
+		instr = pack_count(bytecode);
+		break;
 	}
+
+	return instr;
 }
 
 
