@@ -17,9 +17,10 @@ function receive_data(data){
 		var results;
 		var clone;
 		if(data.instr == 'PAUSE'){
+			var tmp = {'instr': {'instr':'PAUSE'}, 'length': data.length};
 			stream.push({
 				'instr': {'instr':'PAUSE'}, 
-				'descr': instr_info_html({time_now: time_now, data: data, end:time_now+data.length}), 
+				'descr': instr_info_html({time_now: time_now, data: tmp, end:time_now+data.length}), 
 				'length': data.length * scale -2/*for the broders*/});
 			results = stream;
 		}
