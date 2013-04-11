@@ -2,7 +2,11 @@ function receive_data(data){
 	var res = [];
 	function flatten(data, index){
 		res[index] = res[index] || [];
-		res[index].push(data.instr);
+		if(data == 'LOOP'){
+			res[index].push('LOOP');
+		} else {
+			res[index].push(data.instr);
+		}
 		for (var c in data.children){
 			flatten(data.children[c], index+Number(c));
 		}

@@ -100,8 +100,10 @@ class TreeBuilder:
                     tree['children'].append('LOOP')
                 elif n < len(self.instrs):
                     tree['children'].append(self.step(n))
+        elif next <= i:
+            tree['children'].append('LOOP')
         elif next < len(self.instrs):
-            tree['children'] = [self.step(next)]
+            tree['children'].append(self.step(next))
         return tree
 
 
