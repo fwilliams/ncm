@@ -13,27 +13,19 @@
 #define MASK16					(uint32_t) 0x0FFFF
 #define MASK20					(uint32_t) 0xFFFFF
 
-uint8_t get_instr_type(uint32_t bytecode) {
-	return (uint8_t) (bytecode >> 28);
+uint32_t get_instr_type(uint32_t bytecode) {
+	return (uint32_t) (bytecode >> 28);
 }
 
-ncm_instr_t pack_future(uint32_t bytecode) {
-	ncm_instr_t instr;
+void pack_future(uint32_t bytecode, ncm_instr_t *instr) {
+	instr->type = FUTURE;
 
-	instr.type = FUTURE;
-
-	instr.args[0] = ((bytecode >> 20) & MASK8);
-	instr.args[1] = (bytecode & MASK16);
-
-	return instr;
+	instr->args[0] = ((bytecode >> 20) & MASK8);
+	instr->args[1] = (bytecode & MASK16);
 }
 
-ncm_instr_t pack_halt(uint32_t bytecode) {
-	ncm_instr_t instr;
-
-	instr.type = HALT;
-
-	return instr;
+void pack_halt(uint32_t bytecode, ncm_instr_t *instr) {
+	instr->type = HALT;
 }
 
 void pack_guard_args(uint32_t guard_mask, uint32_t* out_args) {
@@ -101,114 +93,107 @@ void pack_guard_args(uint32_t guard_mask, uint32_t* out_args) {
 	}
 }
 
-ncm_instr_t pack_if(uint32_t bytecode) {
-	ncm_instr_t instr;
+void pack_if(uint32_t bytecode, ncm_instr_t *instr) {
 	uint32_t guard_mask;
 
-	instr.type = IF;
-	instr.args[1] = ((bytecode >> 20) & MASK8);
+	instr->type = IF;
+	instr->args[1] = ((bytecode >> 20) & MASK8);
 
 	guard_mask = (bytecode & MASK20);
 
-	pack_guard_args(guard_mask, &instr.args[0]);
-
-	return instr;
+	pack_guard_args(guard_mask, &instr->args[0]);
 }
 
-ncm_instr_t pack_create(uint32_t bytecode) {
-	ncm_instr_t instr;
-
-	instr.type = CREATE;
-	instr.args[0] = ((bytecode >> 8) & MASK8);
-
-	return instr;
+void pack_create(uint32_t bytecode, ncm_instr_t *instr) {
+	instr->type = CREATE;
+	instr->args[0] = ((bytecode >> 8) & MASK8);
 }
 
-ncm_instr_t pack_send(uint32_t bytecode) {
-	ncm_instr_t instr;
-
-	instr.type = SEND;
-	instr.args[0] = ((bytecode >> 16) & MASK8);
-	instr.args[1] = 0; // Hard-coded Message ID since the hardware only has one message buffer
-
-	return instr;
+void pack_send(uint32_t bytecode, ncm_instr_t *instr) {
+	instr->type = SEND;
+	instr->args[0] = ((bytecode >> 16) & MASK8);
+	instr->args[1] = 0; // Hard-coded Message ID since the hardware only has one message buffer
 }
 
-ncm_instr_t pack_receive(uint32_t bytecode) {
-	ncm_instr_t instr;
-
-	instr.type = RECEIVE;
-	instr.args[0] = ((bytecode >> 16) & MASK8);
-	instr.args[1] = ((bytecode >> 8) & MASK8);
-
-	return instr;
+void pack_receive(uint32_t bytecode, ncm_instr_t *instr) {
+	instr->type = RECEIVE;
+	instr->args[0] = ((bytecode >> 16) & MASK8);
+	instr->args[1] = ((bytecode >> 8) & MASK8);
 }
 
-ncm_instr_t pack_nop(uint32_t bytecode) {
-	ncm_instr_t instr;
-	instr.type = NOP;
-
-	return instr;
+void pack_nop(uint32_t bytecode, ncm_instr_t *instr) {
+	instr->type = NOP;
 }
 
-ncm_instr_t pack_sync(uint32_t bytecode) {
-	ncm_instr_t instr;
-
-	instr.type = SYNC;
+void pack_sync(uint32_t bytecode, ncm_instr_t *instr) {
+	instr->type = SYNC;
 
 	if((bytecode >> 27) & 1) {
-		instr.args[0] = SYNC_MASTER;
-		instr.args[1] = (bytecode & MASK8);
+		instr->args[0] = SYNC_MASTER;
+		instr->args[1] = (bytecode & MASK8);
 	} else {
-		instr.args[0] = SYNC_SLAVE;
-		instr.args[1] = (bytecode & MASK16);
+		instr->args[0] = SYNC_SLAVE;
+		instr->args[1] = (bytecode & MASK16);
 	}
-
-	return instr;
 }
 
-ncm_instr_t pack_count(uint32_t bytecode) {
-	ncm_instr_t instr;
-
+void pack_count(uint32_t bytecode, ncm_instr_t *instr) {
 	if(((bytecode >> 24) & 3) == 0) {
-		instr.type = NOP;
+		instr->type = NOP;
 	} else if(((bytecode >> 24) & 3) == 1) {
-		instr.type = CLEAR_COUNTER;
+		instr->type = CLEAR_COUNTER;
 	} else if(((bytecode >> 24) & 3) == 2) {
-		instr.type = ADD_TO_COUNTER;
-		instr.args[0] = 0;
-		instr.args[1] = 1;
+		instr->type = ADD_TO_COUNTER;
+		instr->args[0] = 0;
+		instr->args[1] = 1;
 	} else if(((bytecode >> 24) & 3) == 3) {
-		instr.type = SUB_FROM_COUNTER;
-		instr.args[0] = 0;
-		instr.args[1] = 1;
+		instr->type = SUB_FROM_COUNTER;
+		instr->args[0] = 0;
+		instr->args[1] = 1;
 	}
-	return instr;
 }
 
 ncm_instr_t get_instruction(uint32_t bytecode) {
-	uint8_t type = get_instr_type(bytecode);
+	uint32_t type = (bytecode >> 28);
+
+	ncm_instr_t instr;
+
+	instr.args[0] = 0;
+	instr.args[1] = 0;
+	instr.args[2] = 0;
+	instr.args[3] = 0;
 
 	switch(type) {
 	case HW_FUTURE:
-		return pack_future(bytecode);
+		pack_future(bytecode, &instr);
+		break;
 	case HW_HALT:
-		return pack_halt(bytecode);
+		pack_halt(bytecode, &instr);
+		break;
 	case HW_IF:
-		return pack_if(bytecode);
+		pack_if(bytecode, &instr);
+		break;
 	case HW_CREATE:
-		return pack_create(bytecode);
+		pack_create(bytecode, &instr);
+		break;
 	case HW_SEND:
-		return pack_send(bytecode);
+		pack_send(bytecode, &instr);
+		break;
 	case HW_RECEIVE:
-		return pack_receive(bytecode);
+		pack_receive(bytecode, &instr);
+		break;
 	case HW_NOP:
-		return pack_nop(bytecode);
+		pack_nop(bytecode, &instr);
+		break;
 	case HW_SYNC:
-		return pack_sync(bytecode);
+		pack_sync(bytecode, &instr);
+		break;
 	case HW_COUNT:
-		return pack_count(bytecode);
+		pack_count(bytecode, &instr);
+		break;
 	}
+
+	return instr;
 }
 
 

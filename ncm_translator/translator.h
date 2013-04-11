@@ -109,8 +109,6 @@ typedef struct netcode_program {
 
 #define TRANSLATION_OK 0
 
-int translate(uint32_t* in_program, uint32_t len, ncm_program_t* out_program);
-
 ncm_instr_t get_instruction(uint32_t bytecode);
 
 
