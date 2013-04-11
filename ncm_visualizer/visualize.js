@@ -1,18 +1,32 @@
 function receive_data(data){
-	var res = [];
-	function flatten(data, index){
-		res[index] = res[index] || [];
+	function flatten(data, stream){
+		var results;
+		var clone;
 		if(data == 'LOOP'){
-			res[index].push('LOOP');
+			stream.push({'instr':'LOOP'});
+			results = stream;
 		} else {
-			res[index].push(data.instr);
+			stream.push(data.instr);
+			if(data.children.length == 1){
+				results = flatten(data.children[0], stream);
+			} else {
+				results = [];
+				for (var c = 0; c < data.children.length; c++){
+					clone = JSON.parse(JSON.stringify(stream));
+					results.push(flatten(data.children[c], clone));
+				}
+			}
 		}
-		for (var c in data.children){
-			flatten(data.children[c], index+Number(c));
+		return results;
+	}
+	streams = flatten(data, [], 0);
+	for (var s in streams){
+		var stream = streams[s];
+		console.log('stream '+s);
+		for (var d in stream){
+			var drop = stream[d];
+			console.log(drop.instr);
 		}
 	}
-	console.log(data);
-	console.log(flatten(data, 0));
-	console.log(res);
-	document.getElementById('container').innerHTML = Mustache.render('test {{a}}', {'a':'b'});
+	document.getElementById('container').innerHTML = Mustache.render('{{#.}}{{#.}}{{instr}},{{/.}}<br/>{{/.}}', streams);
 }
