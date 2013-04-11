@@ -431,7 +431,7 @@ int ncm_send_sync_hard(ncm_network_t* ncm_net, u32 chan){
 		skb_put(msg.skb, ETH_HLEN);
 		((struct ethhdr *)msg.skb->head)->h_proto = htons(ETH_P_NC_SYNC);
 //		SKB_PRINT(msg.skb);
-		ret = nc_sendmsg_hard(channel->mac, channel->dev, &msg);
+		ret = nc_sendmsg_hard("\xFF\xFF\xFF\xFF\xFF\xFF", channel->dev, &msg);
 		return ret;
 	} else {
 		printk(KERN_WARNING "Trying to send over non existent device (channel %i)", chan);
@@ -441,7 +441,7 @@ int ncm_send_sync_hard(ncm_network_t* ncm_net, u32 chan){
 
 int ncm_send_sync_soft(ncm_network_t* ncm_net, u32 chan){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	return nc_sendmsg(ncm_net->mac, channel->mac, channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
+	return nc_sendmsg(ncm_net->mac, "\xFF\xFF\xFF\xFF\xFF\xFF", channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
 }
 
 int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
