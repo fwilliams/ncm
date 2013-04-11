@@ -52,7 +52,7 @@ void make_program(ncm_program_t* program, ncm_net_params_t* params, int type) {
 		i++;
 		program->instructions[i].type = FUTURE;
 		program->instructions[i].args[0] = 100000;
-		program->instructions[i].args[1] = 4;
+		program->instructions[i].args[1] = 5;
 		i++;
 		program->instructions[i].type = HALT;
 		i++;
@@ -101,7 +101,7 @@ void make_program(ncm_program_t* program, ncm_net_params_t* params, int type) {
 		i++;
 		program->instructions[i].type = FUTURE;
 		program->instructions[i].args[0] = 100000;
-		program->instructions[i].args[1] = 4;
+		program->instructions[i].args[1] = 5;
 		i++;
 		program->instructions[i].type = HALT;
 		i++;
