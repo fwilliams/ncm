@@ -14,6 +14,8 @@ int main(int argc, char** argv) {
 	uint32_t in_bytecode;
 	ncm_instr_t out_instr;
 
+	std::fill(out_instr.args, out_instr.args+4, 0);
+
 	while(true) {
 		// Read in a bytecode
 		if( fread(&in_bytecode, sizeof(uint32_t), 1, stdin) < 1 ) {
