@@ -1,9 +1,15 @@
 var scale = 0.05;
 var cached_data;
+
+function instr_info_html(data){
+	return Mustache.render(document.getElementById('instr-info-template').innerHTML, data);
+}
 function instr_info(t){
 	$this = $(t);
-	$('#dialog').html($this.attr('data-title'));
-	$('#dialog').dialog();
+	if($this.attr('data-title')){
+		$('#dialog').html($this.attr('data-title'));
+		$('#dialog').dialog();
+	}
 }
 function receive_data(data){
 	cached_data = data;
@@ -11,15 +17,24 @@ function receive_data(data){
 		var results;
 		var clone;
 		if(data.instr == 'PAUSE'){
-			stream.push({'instr':{'instr':'PAUSE'}, 'descr':data.instr+' start: '+time_now, 'length':data.length * scale -2/*for the broders*/});
+			stream.push({
+				'instr': {'instr':'PAUSE'}, 
+				'descr': instr_info_html({time_now: time_now, data: data, end:time_now+data.length}), 
+				'length': data.length * scale -2/*for the broders*/});
 			results = stream;
 		}
 		if(data == 'LOOP'){
-			stream.push({'instr':{'instr':'LOOP'}, 'descr':'', 'length':-1});
+			stream.push({
+				'instr': {'instr':'LOOP'}, 
+				'descr': '', 
+				'length': -1});
 			results = stream;
 		} else {
 			if(data.instr != 'PAUSE'){
-				stream.push({'instr': data.instr, 'descr':data.instr.instr+'<br/> start: '+time_now, 'length': data.length * scale -2/*for the broders*/});
+				stream.push({
+					'instr': data.instr, 
+					'descr': instr_info_html({time_now: time_now, data: data, end:time_now+data.length}),
+					'length': data.length * scale -2/*for the broders*/});
 			}
 			if(data.children.length == 1){
 				results = flatten(data.children[0], stream, time_now+data.length);

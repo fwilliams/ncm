@@ -97,6 +97,12 @@
 <div id="dialog" style="display:none"></div>
 <div><a id="zoomin">+</a> <a id="zoomout">-</a></div>
 <div id="container"></div>
+<div id="instr-info-template" style="display:none">
+	<div>{{data.instr.instr}}</div>
+	<div>start: {{time_now}}</div>
+	<div>length: {{data.length}}</div>
+	<div>end: {{end}}</div>
+</div>
 <div id="template" style="display:none">
 {{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px">{{instr.instr}}</div>{{/.}}</div>{{/.}}
 </div>
