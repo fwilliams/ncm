@@ -20,12 +20,13 @@ void make_program(ncm_program_t* program, ncm_net_params_t* params, int type) {
 //	u8 vm2_mac[] = {0x0a, 0x00, 0x27, 0x00, 0x00, 0x00};
 	u8 devname1[16] = "eth0";
 	u8 devname2[16] = "eth0";
+	int i;
 
 
 	switch(type) {
 	case TYPE_ARCH1:
 		params->channels = 1;
-		program->length = 8;
+		program->length = 9;
 		params->channel_mac = kmalloc(ETH_ALEN * params->channels, GFP_KERNEL);
 		params->net_device_name = kmalloc(IFNAMSIZ * params->channels, GFP_KERNEL);
 		program->instructions = kmalloc(sizeof(ncm_instr_t) * program->length, GFP_KERNEL);
@@ -36,41 +37,45 @@ void make_program(ncm_program_t* program, ncm_net_params_t* params, int type) {
 		/*
 		 * ArchVM Program
 		 */
-		program->instructions[0].type = CREATE;
-		program->instructions[0].args[0] = 0;
-		program->instructions[0].args[1] = 0;
-
-		program->instructions[1].type = SEND;
-		program->instructions[1].args[0] = 0;
-		program->instructions[1].args[1] = 0;
-
-		program->instructions[2].type = SYNC;
-		program->instructions[2].args[0] = SYNC_MASTER;
-		program->instructions[2].args[1] = 0;
-
-		program->instructions[3].type = WAIT;
-		program->instructions[3].args[0] = 100000;
-		program->instructions[3].args[1] = 4;
-
-		program->instructions[4].type = RECEIVE;
-		program->instructions[4].args[0] = 0;
-		program->instructions[4].args[1] = 1;
-
-		program->instructions[5].type = CREATE;
-		program->instructions[5].args[0] = 0;
-		program->instructions[5].args[1] = 0;
-
-		program->instructions[6].type = SEND;
-		program->instructions[6].args[0] = 0;
-		program->instructions[6].args[1] = 0;
-
-		program->instructions[7].type = GOTO;
-		program->instructions[7].args[0] = 3;
+		i = 0;
+		program->instructions[i].type = CREATE;
+		program->instructions[i].args[0] = 0;
+		program->instructions[i].args[1] = 0;
+		i++;
+		program->instructions[i].type = SEND;
+		program->instructions[i].args[0] = 0;
+		program->instructions[i].args[1] = 0;
+		i++;
+		program->instructions[i].type = SYNC;
+		program->instructions[i].args[0] = SYNC_MASTER;
+		program->instructions[i].args[1] = 0;
+		i++;
+		program->instructions[i].type = FUTURE;
+		program->instructions[i].args[0] = 100000;
+		program->instructions[i].args[1] = 4;
+		i++;
+		program->instructions[i].type = HALT;
+		i++;
+		program->instructions[i].type = RECEIVE;
+		program->instructions[i].args[0] = 0;
+		program->instructions[i].args[1] = 1;
+		i++;
+		program->instructions[i].type = CREATE;
+		program->instructions[i].args[0] = 0;
+		program->instructions[i].args[1] = 0;
+		i++;
+		program->instructions[i].type = SEND;
+		program->instructions[i].args[0] = 0;
+		program->instructions[i].args[1] = 0;
+		i++;
+		program->instructions[i].type = IF;
+		program->instructions[i].args[0] = ALWAYS_TRUE;
+		program->instructions[i].args[1] = 3;
 		break;
 
 	case TYPE_ARCH2:
 		params->channels = 1;
-		program->length = 6;
+		program->length = 7;
 		params->channel_mac = kmalloc(ETH_ALEN * params->channels, GFP_KERNEL);
 		params->net_device_name = kmalloc(IFNAMSIZ * params->channels, GFP_KERNEL);
 		program->instructions = kmalloc(sizeof(ncm_instr_t) * program->length, GFP_KERNEL);
@@ -81,28 +86,32 @@ void make_program(ncm_program_t* program, ncm_net_params_t* params, int type) {
 		/*
 		 * ArchVM2 Program
 		 */
-		program->instructions[0].type = SYNC;
-		program->instructions[0].args[0] = SYNC_SLAVE;
-		program->instructions[0].args[1] = 10000000;
-
-		program->instructions[1].type = CREATE;
-		program->instructions[1].args[0] = 0;
-		program->instructions[1].args[1] = 0;
-
-		program->instructions[2].type = SEND;
-		program->instructions[2].args[0] = 0;
-		program->instructions[2].args[1] = 0;
-
-		program->instructions[3].type = WAIT;
-		program->instructions[3].args[0] = 100000;
-		program->instructions[3].args[1] = 4;
-
-		program->instructions[4].type = RECEIVE;
-		program->instructions[4].args[0] = 0;
-		program->instructions[4].args[1] = 1;
-
-		program->instructions[5].type = GOTO;
-		program->instructions[5].args[0] = 1;
+		i = 0;
+		program->instructions[i].type = SYNC;
+		program->instructions[i].args[0] = SYNC_SLAVE;
+		program->instructions[i].args[1] = 10000000;
+		i++;
+		program->instructions[i].type = CREATE;
+		program->instructions[i].args[0] = 0;
+		program->instructions[i].args[1] = 0;
+		i++;
+		program->instructions[i].type = SEND;
+		program->instructions[i].args[0] = 0;
+		program->instructions[i].args[1] = 0;
+		i++;
+		program->instructions[i].type = FUTURE;
+		program->instructions[i].args[0] = 100000;
+		program->instructions[i].args[1] = 4;
+		i++;
+		program->instructions[i].type = HALT;
+		i++;
+		program->instructions[i].type = RECEIVE;
+		program->instructions[i].args[0] = 0;
+		program->instructions[i].args[1] = 1;
+		i++;
+		program->instructions[i].type = IF;
+		program->instructions[i].args[0] = ALWAYS_TRUE;
+		program->instructions[i].args[1] = 1;
 
 		break;
 	}
