@@ -17,21 +17,23 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 		memcpy(buf, a->ncm_sysfs->program->instructions, sizeof(ncm_instr_t) * a->ncm_sysfs->program->length);
 		return sizeof(ncm_instr_t) * a->ncm_sysfs->program->length;
 	} else if(memcmp(attr->name, "control", 7) == 0){
-		if(!is_running(a->ncm_sysfs->ncm_interp)){
+		if(is_running(a->ncm_sysfs->ncm_interp)){
 			memcpy(buf, "running\n", sizeof("running\n"));
 			return sizeof("running\n");
 		} else {
 			memcpy(buf, "not running\n", sizeof("not running\n"));
-			return sizeof("not running\n");
+			return sizeof("stopped\n");
 		}
 	} else if(memcmp(attr->name, "params", 6) == 0){
 		channels = a->ncm_sysfs->interp_params->network.channels;
 		memcpy(buf, a->ncm_sysfs->interp_params, sizeof(ncm_interp_params_t));
-		memcpy(buf + sizeof(ncm_interp_params_t), a->ncm_sysfs->interp_params->network.net_device_name,
+		// copy to the end of the known size part, overwriting all the pointers we don't want to save
+		// note that net_device_name has to be the first pointer in unknown size part
+		memcpy(buf + offsetof(ncm_net_params_t, net_device_name), a->ncm_sysfs->interp_params->network.net_device_name,
 				channels * IFNAMSIZ);
-		memcpy(buf + sizeof(ncm_interp_params_t) + channels * IFNAMSIZ, a->ncm_sysfs->interp_params->network.mac_address,
+		memcpy(buf + offsetof(ncm_net_params_t, net_device_name) + channels * IFNAMSIZ, a->ncm_sysfs->interp_params->network.channel_mac,
 				channels * ETH_ALEN);
-		return sizeof(ncm_interp_params_t) + channels * (IFNAMSIZ + ETH_ALEN);
+		return offsetof(ncm_net_params_t, net_device_name) + channels * (IFNAMSIZ + ETH_ALEN);
 	} else {
 		return 0;
 	}
@@ -69,7 +71,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 				memcpy(network->channel_mac, buf + sizeof(ncm_interp_params_t) +
 						IFNAMSIZ * channels, ETH_ALEN * channels);
 			} else {
-				//TODO: write an erorr somewhere
+				//TODO: write an error somewhere
 			}
 		} else {
 			//TODO: write an error somewhere
@@ -85,13 +87,15 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 			a->ncm_sysfs->program->instructions = kmalloc(len, GFP_KERNEL);
 			// copy the given data into it
 			memcpy(a->ncm_sysfs->program->instructions, buf, len);
+		} else {
+			//TODO: write an error somewhere
 		}
 	} else if(memcmp(attr->name, "control", 7) == 0){
 		// if you write "run" into the command
-		if(len == 4 && memcmp(buf, "run", 3) == 0){
+		if(memcmp(buf, "run", 3) == 0){
 			start_interpreter(a->ncm_sysfs->ncm_interp, a->ncm_sysfs->program, a->ncm_sysfs->interp_params);
 		// if you write "stop" into the command
-		} else if (len == 5 && memcmp(buf, "stop", 4) == 0){
+		} else if (memcmp(buf, "stop", 4) == 0){
 			stop_interpreter(a->ncm_sysfs->ncm_interp);
 		} else {
 			return len;
