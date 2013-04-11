@@ -31,7 +31,7 @@ instr_arr = []
 instr = f.read(instr_size)
 while instr != "":
     values = struct.unpack_from("cIIII", instr, 0)
-    parsed = {'instr': ord(values[0]),
+    parsed = {'instr': bytecodes[1][ord(values[0])],
               'arg0': values[1],
               'arg1': values[2],
               'arg2': values[3],
@@ -39,20 +39,20 @@ while instr != "":
     instr_arr.append(parsed)
     instr = f.read(instr_size)
 
-lengths = {bytecodes[0]['FUTURE']: 1,
-           bytecodes[0]['HALT']: 1,
-           bytecodes[0]['IF']: 1,
-           bytecodes[0]['MODE']: 1,
-           bytecodes[0]['CREATE']: 1,
-           bytecodes[0]['DESTROY']: 1,
-           bytecodes[0]['SEND']: 1,
-           bytecodes[0]['RECEIVE']: 1,
-           bytecodes[0]['SYNC']: 1,
-           bytecodes[0]['HANDLE']: 1,
-           bytecodes[0]['NOP']: 1,
-           bytecodes[0]['SET_COUNTER']: 1,
-           bytecodes[0]['ADD_TO_COUNTER']: 1,
-           bytecodes[0]['SUB_FROM_COUNTER']: 1}
+lengths = {'FUTURE': 1,
+           'HALT': 1,
+           'IF': 1,
+           'MODE': 1,
+           'CREATE': 1,
+           'DESTROY': 1,
+           'SEND': 1,
+           'RECEIVE': 1,
+           'SYNC': 1,
+           'HANDLE': 1,
+           'NOP': 1,
+           'SET_COUNTER': 1,
+           'ADD_TO_COUNTER': 1,
+           'SUB_FROM_COUNTER': 1}
 
 
 class TreeBuilder:
@@ -72,9 +72,19 @@ class TreeBuilder:
         tree['length'] = lengths[instr['instr']]
         tree['children'] = []
 
-        if(instr['instr'] == bytecodes[0]['FUTURE']):
+        if(instr['instr'] == 'CREATE'):
+            pass
+        if(instr['instr'] == 'SEND'):
+            pass
+        if(instr['instr'] == 'SYNC'):
+            pass
+        if(instr['instr'] == 'RECEIVE'):
+            pass
+        if(instr['instr'] == 'IF'):
+            next = [next, instr['arg1']]
+        if(instr['instr'] == 'FUTURE'):
             self.future_queue.append(instr)
-        elif(instr['instr'] == bytecodes[0]['HALT']):
+        elif(instr['instr'] == 'HALT'):
             self.future_queue = sorted(self.future_queue,
                                        key=lambda k: k['arg0'])
             next_future = self.future_queue.pop()
@@ -82,12 +92,14 @@ class TreeBuilder:
         else:
             pass
 
-        if next < len(self.instrs):
-            if isinstance(next, (list, tuple)):
-                for n in next:
+        if isinstance(next, (list, tuple)):
+            for n in next:
+                if n <= i:
+                    tree['children'].append('LOOP')
+                elif n < len(self.instrs):
                     tree['children'].append(self.step(n))
-            else:
-                tree['children'] = [self.step(next)]
+        elif next < len(self.instrs):
+            tree['children'] = [self.step(next)]
         return tree
 
 
