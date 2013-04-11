@@ -20,8 +20,8 @@ uint32_t get_instr_type(uint32_t bytecode) {
 void pack_future(uint32_t bytecode, ncm_instr_t *instr) {
 	instr->type = FUTURE;
 
-	instr->args[0] = ((bytecode >> 20) & MASK8);
-	instr->args[1] = (bytecode & MASK16);
+	instr->args[0] = (bytecode & MASK16);
+	instr->args[1] = ((bytecode >> 20) & MASK8);
 }
 
 void pack_halt(uint32_t bytecode, ncm_instr_t *instr) {
