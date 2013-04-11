@@ -31,7 +31,6 @@ void make_program(ncm_program_t* program, ncm_net_params_t* params, int type) {
 		program->instructions = kmalloc(sizeof(ncm_instr_t) * program->length, GFP_KERNEL);
 
 		memcpy(params->net_device_name[0], devname1, IFNAMSIZ);
-		memcpy(params->mac_address, vm1_mac, ETH_ALEN);
 		memcpy(params->channel_mac[0], vm2_mac, ETH_ALEN);
 
 		/*
@@ -77,7 +76,6 @@ void make_program(ncm_program_t* program, ncm_net_params_t* params, int type) {
 		program->instructions = kmalloc(sizeof(ncm_instr_t) * program->length, GFP_KERNEL);
 
 		memcpy(params->net_device_name[0], devname2, IFNAMSIZ);
-		memcpy(params->mac_address, vm2_mac, ETH_ALEN);
 		memcpy(params->channel_mac[0], vm1_mac, ETH_ALEN);
 
 		/*

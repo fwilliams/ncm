@@ -328,8 +328,6 @@ void init_network(ncm_network_t* ncm_net, ncm_net_params_t* params){
 	if (ret < 0) {
 		debug_print(KERN_WARNING "sock_create() failed on receive socket");
 	}
-	memcpy(ncm_net->mac, params->mac_address, ETH_ALEN);
-	printk(KERN_INFO "MAC: %pM", ncm_net->mac);
 
 	for(i = 0; i < MAX_MESSAGES; i++) {
 		rwlock_init(&ncm_net->message_space.at[i].lock);

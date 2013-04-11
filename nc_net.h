@@ -81,7 +81,6 @@ typedef struct ncm_network {
 
 typedef struct ncm_net_params {
 	u32 channels;
-	u8	mac_address[ETH_ALEN];
 	// known size
 	// ------
 	// unknown size
