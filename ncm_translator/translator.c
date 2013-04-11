@@ -13,8 +13,8 @@
 #define MASK16					(uint32_t) 0x0FFFF
 #define MASK20					(uint32_t) 0xFFFFF
 
-uint8_t get_instr_type(uint32_t bytecode) {
-	return (uint8_t) (bytecode >> 28);
+uint32_t get_instr_type(uint32_t bytecode) {
+	return (uint32_t) (bytecode >> 28);
 }
 
 ncm_instr_t pack_future(uint32_t bytecode) {
@@ -187,7 +187,7 @@ ncm_instr_t pack_count(uint32_t bytecode) {
 }
 
 ncm_instr_t get_instruction(uint32_t bytecode) {
-	uint8_t type = get_instr_type(bytecode);
+	uint32_t type = (bytecode >> 28);
 
 	switch(type) {
 	case HW_FUTURE:
