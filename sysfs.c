@@ -22,7 +22,7 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 			return sizeof("running\n");
 		} else {
 			memcpy(buf, "not running\n", sizeof("not running\n"));
-			return sizeof("stopped\n");
+			return sizeof("not running\n");
 		}
 	} else if(memcmp(attr->name, "params", 6) == 0){
 		channels = a->ncm_sysfs->interp_params->network.channels;
@@ -51,7 +51,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 		if(!is_running(a->ncm_sysfs->ncm_interp)){
 			// make sure the input is correctly formatted
 			channels = ((ncm_interp_params_t*)buf)->network.channels;
-			if(len == sizeof(ncm_interp_params_t) + (IFNAMSIZ+ETH_ALEN) * channels){
+			if(len == offsetof(ncm_net_params_t, net_device_name) + (IFNAMSIZ+ETH_ALEN) * channels){
 				network = &a->ncm_sysfs->interp_params->network;
 				// free the old params if there were any
 				if(network->net_device_name != 0){
@@ -60,8 +60,8 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 				if(network->channel_mac != 0){
 					kfree(network->channel_mac);
 				}
-				// copy the given data to the new params - make sure this happens before the allocs
-				memcpy(a->ncm_sysfs->interp_params, buf, sizeof(ncm_interp_params_t));
+				// copy the given data to the new params
+				memcpy(a->ncm_sysfs->interp_params, buf, offsetof(ncm_net_params_t, net_device_name));
 
 				// create new params
 				network->net_device_name = kmalloc(IFNAMSIZ * channels, GFP_KERNEL);
@@ -71,10 +71,10 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 				memcpy(network->channel_mac, buf + sizeof(ncm_interp_params_t) +
 						IFNAMSIZ * channels, ETH_ALEN * channels);
 			} else {
-				//TODO: write an error somewhere
+				printk(KERN_WARNING "Invalid params file.");
 			}
 		} else {
-			//TODO: write an error somewhere
+			printk(KERN_WARNING "Tried to load params into running ncm program. Please stop it first.");
 		}
 	} else if(memcmp(attr->name, "code", 4) == 0){
 		// make sure we don't modify interpreter state while it's running
@@ -88,15 +88,19 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 			// copy the given data into it
 			memcpy(a->ncm_sysfs->program->instructions, buf, len);
 		} else {
-			//TODO: write an error somewhere
+			printk(KERN_WARNING "Tried to load code into running ncm program. Please stop it first.");
 		}
 	} else if(memcmp(attr->name, "control", 7) == 0){
 		// if you write "run" into the command
 		if(memcmp(buf, "run", 3) == 0){
-			start_interpreter(a->ncm_sysfs->ncm_interp, a->ncm_sysfs->program, a->ncm_sysfs->interp_params);
+			if(!is_running(a->ncm_sysfs->ncm_interp)){
+				start_interpreter(a->ncm_sysfs->ncm_interp, a->ncm_sysfs->program, a->ncm_sysfs->interp_params);
+			}
 		// if you write "stop" into the command
 		} else if (memcmp(buf, "stop", 4) == 0){
-			stop_interpreter(a->ncm_sysfs->ncm_interp);
+			if(is_running(a->ncm_sysfs->ncm_interp)){
+				stop_interpreter(a->ncm_sysfs->ncm_interp);
+			}
 		} else {
 			return len;
 		}

@@ -14,6 +14,7 @@
 #include "nc_net.h"
 #include "netcode_helper.h"
 
+char* broadcast_mac = "\xFF\xFF\xFF\xFF\xFF\xFF";
 
 #define SKB_PRINT(skb) printk("\n--SKB--\nLine: %i\n", __LINE__); skb_print(skb)
 
@@ -386,7 +387,7 @@ int ncm_send_message_hard(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 	int ret;
 	if(channel->dev){
 		read_lock(&ncm_net->message_space.at[msg_id].lock);
-		ret = nc_sendmsg_hard("\xFF\xFF\xFF\xFF\xFF\xFF", channel->dev, &ncm_net->message_space.at[msg_id]);
+		ret = nc_sendmsg_hard(broadcast_mac, channel->dev, &ncm_net->message_space.at[msg_id]);
 		read_unlock(&ncm_net->message_space.at[msg_id].lock);
 		return ret;
 	} else {
@@ -404,7 +405,7 @@ int ncm_send_message_soft(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 		ret = -NC_ENOIF;
 		goto out;
 	}
-	ret = nc_sendmsg(ncm_net->mac, "\xFF\xFF\xFF\xFF\xFF\xFF", channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].skb->head, ncm_net->message_space.at[msg_id].skb->len, ETH_P_NC);
+	ret = nc_sendmsg(ncm_net->mac, broadcast_mac, channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].skb->head, ncm_net->message_space.at[msg_id].skb->len, ETH_P_NC);
 	kfree_skb(ncm_net->message_space.at[msg_id].skb); //we didn't give up ownership to a network device, it was coppied, so we have to free it
 out:
 	read_unlock(&ncm_net->message_space.at[msg_id].lock);
@@ -422,14 +423,21 @@ int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 int ncm_send_sync_hard(ncm_network_t* ncm_net, u32 chan){
 	message_t msg;
 	int ret;
+	printk(KERN_EMERG "test 1");
 	nc_channel_t* channel = &(ncm_net->at[chan]);
+	printk(KERN_EMERG "test 2");
 	if(channel->dev){
+		printk(KERN_EMERG "test 3");
 		msg.skb = alloc_skb(ETH_ZLEN, GFP_KERNEL);//allocate at least zlen
+		printk(KERN_EMERG "test 4");
 //		SKB_PRINT(msg.skb);
 		skb_put(msg.skb, ETH_HLEN);
+		printk(KERN_EMERG "test 5");
 		((struct ethhdr *)msg.skb->head)->h_proto = htons(ETH_P_NC_SYNC);
+		printk(KERN_EMERG "test 6");
 //		SKB_PRINT(msg.skb);
-		ret = nc_sendmsg_hard("\xFF\xFF\xFF\xFF\xFF\xFF", channel->dev, &msg);
+		ret = nc_sendmsg_hard(broadcast_mac, channel->dev, &msg);
+		printk(KERN_EMERG "test 7");
 		return ret;
 	} else {
 		printk(KERN_WARNING "Trying to send over non existent device (channel %i)", chan);
@@ -439,7 +447,7 @@ int ncm_send_sync_hard(ncm_network_t* ncm_net, u32 chan){
 
 int ncm_send_sync_soft(ncm_network_t* ncm_net, u32 chan){
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	return nc_sendmsg(ncm_net->mac, "\xFF\xFF\xFF\xFF\xFF\xFF", channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
+	return nc_sendmsg(ncm_net->mac, broadcast_mac, channel->send_socket, channel->ifindex, ncm_net->sync_packet + ETH_HLEN, ncm_net->sync_packetlen - ETH_HLEN, ETH_P_NC_SYNC);
 }
 
 int ncm_send_sync(ncm_network_t* ncm_net, u32 chan){
