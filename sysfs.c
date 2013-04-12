@@ -61,14 +61,14 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 					kfree(network->channel_mac);
 				}
 				// copy the given data to the new params
-				memcpy(&a->ncm_sysfs->interp_params->network, buf, offsetof(ncm_net_params_t, net_device_name));
+				memcpy(a->ncm_sysfs->interp_params, buf, offsetof(ncm_net_params_t, net_device_name));
 
 				// create new params
 				network->net_device_name = kmalloc(IFNAMSIZ * channels, GFP_KERNEL);
 				network->channel_mac = kmalloc(ETH_ALEN * channels, GFP_KERNEL);
 
-				memcpy(network->net_device_name, buf + sizeof(ncm_interp_params_t), IFNAMSIZ * channels);
-				memcpy(network->channel_mac, buf + sizeof(ncm_interp_params_t) +
+				memcpy(network->net_device_name, buf + offsetof(ncm_net_params_t, net_device_name), IFNAMSIZ * channels);
+				memcpy(network->channel_mac, buf + offsetof(ncm_net_params_t, net_device_name) +
 						IFNAMSIZ * channels, ETH_ALEN * channels);
 			} else {
 				printk(KERN_WARNING "Invalid params file.");
