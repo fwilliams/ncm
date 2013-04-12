@@ -94,6 +94,9 @@
 	#legend {
 		margin-top: 30px;
 	}
+	.title {
+		font-weight: bold;
+	}
 	</style>
 </head>
 <body>
@@ -113,8 +116,15 @@
 {{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{instr.instr}}</div>{{/.}}</div>{{/.}}
 </script>
 <script type="text/template" id="legend-template" style="display:none">
-<p>Legend:</p>
-<table>{{#.}}<tr><td style="background-color:{{bg}}; color:{{fg}}">{{instr}}</td><td></td></tr>{{/.}}</table>
+<table>
+<tr class="title"><td>Instruction</td><td>Mean</td><td>Standard Deviation</td></tr>
+{{#.}}
+<tr>
+<td style="background-color:{{bg}}; color:{{fg}}">{{instr}}</td>
+<td>{{mean}}</td><td>{{std}}</td>
+</tr>
+{{/.}}
+</table>
 </script>
 <script src="jquery-1.9.1.js"></script>
 <script src="jquery-ui-1.10.2.min.js"></script>

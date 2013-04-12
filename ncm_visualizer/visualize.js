@@ -2,6 +2,23 @@ var scale = 0.2;
 var percentile = 0.50;
 var cached_data;
 
+// copied from parse.py TODO: move all length calculations into the same file?
+lengths = {'FUTURE': {'mew': 200, 'sigma': 100},
+           'HALT': {'mew': 200, 'sigma': 100},
+           'IF': {'mew': 200, 'sigma': 100},
+           'MODE': {'mew': 200, 'sigma': 100},
+           'CREATE': {'mew': 200, 'sigma': 100},
+           'DESTROY': {'mew': 200, 'sigma': 100},
+           'SEND': {'mew': 200, 'sigma': 100},
+           'RECEIVE': {'mew': 200, 'sigma': 100},
+           'SYNC': {'mew': 200, 'sigma': 100},
+           'HANDLE': {'mew': 200, 'sigma': 100},
+           'NOP': {'mew': 200, 'sigma': 100},
+           'SET_COUNTER': {'mew': 200, 'sigma': 100},
+           'ADD_TO_COUNTER': {'mew': 200, 'sigma': 100},
+           'SUB_FROM_COUNTER': {'mew': 200, 'sigma': 100},
+           'LOOP': {'mew': 'n/a', 'sigma': 'n/a'},
+           'PAUSE': {'mew': 'n/a', 'sigma': 'n/a'}};
 
 legend = {'FUTURE': {'bg': 'white', 'fg': 'black'},
            'HALT': {'bg': 'cyan', 'fg': 'black'},
@@ -105,8 +122,7 @@ function render(){
 		}
 		maxlen = Math.max(maxlen, tot);
 	}
-	$('#container').css('width', maxlen);
-	console.log(streams);
+	$('#container').css('width', maxlen*1.1);
 	$('#container').html(Mustache.render($('#template').html(), streams));
 	$('#container').tooltip({
 		items: '.instr',
@@ -120,7 +136,9 @@ function render(){
 		leg.push({
 			instr: instr,
 			bg: legend[instr].bg,
-			fg: legend[instr].fg
+			fg: legend[instr].fg,
+			mean: lengths[instr].mew,
+			std: lengths[instr].sigma
 		});
 	}
 	$('#legend').html(Mustache.render($('#legend-template').html(), leg));
