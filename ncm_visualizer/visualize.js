@@ -35,7 +35,7 @@ function flatten(data, stream, time_now, time_now_mean){
 			'descr': '', 
 			'length': -1}];
 		}
-		var tmp = {'instr': {'instr':'PAUSE'}, 'length': len};
+		var tmp = {'instr': {'instr':'PAUSE'}};
 		stream.push({
 			'instr': {'instr':'PAUSE'}, 
 			'descr': instr_info_html({time_now: time_now, data: tmp, end:time_now+len, len:len}), 
@@ -46,7 +46,7 @@ function flatten(data, stream, time_now, time_now_mean){
 		stream.push({
 			'instr': {'instr':'LOOP'}, 
 			'descr': '', 
-			'length': -1});
+			'length': 50});
 		results = stream;
 	} else {
 		if(data.instr != 'PAUSE'){
@@ -70,6 +70,16 @@ function flatten(data, stream, time_now, time_now_mean){
 
 function render(){
 	streams = flatten(cached_data, [], 0, 0);
+	// calculate the length of the container
+	var maxlen = 0;
+	for (var i in streams){
+		var tot = 0;
+		for (var j in streams[i]){
+			tot += streams[i][j].length+2;
+		}
+		maxlen = Math.max(maxlen, tot);
+	}
+	$('#container').css('width', maxlen);
 	$('#container').html(Mustache.render($('#template').html(), streams));
 	$('#container').tooltip({
 		items: '.instr',
@@ -84,7 +94,7 @@ var hack = false;
 function receive_data(data){
 	cached_data = data;
 	render();
-	$('#perc').keyup(function(event){
+	$('#perc').keyup(function(){
 		var num = Number(this.value);
 		if(!isNaN(num) && percentile !== num){
 			percentile = num;
@@ -109,14 +119,23 @@ function receive_data(data){
 			}
 		}
 	});
+	$('#zoom').keyup(function(){
+		var num = Number(this.value);
+		if(!isNaN(num) && scale !== num){
+			scale = num;
+			render();
+		}
+	});
+	$('#zoomin').click(function(e){
+		scale *= 1.1;
+		$('#zoom').val(scale);
+		render();
+		e.preventDefault();
+	});
+	$('#zoomout').click(function(e){
+		scale /= 1.1;
+		$('#zoom').val(scale);
+		render();
+		e.preventDefault();
+	});
 }
-$('#zoomin').click(function(e){
-	scale *= 1.1;
-	render();
-	e.preventDefault();
-});
-$('#zoomout').click(function(e){
-	scale /= 1.1;
-	render();
-	e.preventDefault();
-});
