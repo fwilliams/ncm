@@ -104,4 +104,10 @@ bool is_error_set(ncm_interpreter_t* interpreter, u16 error_mask);
  */
 void set_error(ncm_interpreter_t* interpreter, u8 bit);
 
+/*
+ * Clears the error bit given by bit.
+ * E.g. if bit = 15, the 15th bit from the left will be set to 0
+ */
+void clear_error(ncm_interpreter_t* interpreter, u8 bit);
+
 #endif /* INTERPRETER_H_ */

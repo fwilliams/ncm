@@ -227,6 +227,8 @@ static enum instr_result handle_receive(struct interpreter* interpreter) {
 
 	if(ncm_receive_message_to_var(&interpreter->network, &interpreter->variable_space, chan_id, var_id) < 0) {
 		set_error(interpreter, ERR_BIT_RCV_FAULT);
+	} else {
+		clear_error(interpreter, ERR_BIT_RCV_FAULT);
 	}
 
 	return INSTR_OK;
@@ -247,6 +249,8 @@ static enum instr_result handle_sync(struct interpreter* interpreter) {
 	} else {
 		if(ncm_receive_sync(&interpreter->network, chan_id) < 0) {
 			set_error(interpreter, ERR_BIT_SYNC_TIMEOUT);
+		} else {
+			clear_error(interpreter, ERR_BIT_SYNC_TIMEOUT);
 		}
 	}
 
@@ -401,4 +405,12 @@ bool is_error_set(ncm_interpreter_t* interpreter, u16 error_mask) {
  */
 void set_error(ncm_interpreter_t* interpreter, u8 bit) {
 	interpreter->error_bits |= (1 << bit);
+}
+
+/*
+ * Clears the error bit given by bit.
+ * E.g. if bit = 15, the 15th bit from the left will be set to 0
+ */
+void clear_error(ncm_interpreter_t* interpreter, u8 bit) {
+	interpreter->error_bits &= ~(1 << bit);
 }
