@@ -26,7 +26,7 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 		}
 	} else if(memcmp(attr->name, "params", 6) == 0){
 		channels = a->ncm_sysfs->interp_params->network.channels;
-		memcpy(buf, a->ncm_sysfs->interp_params, sizeof(ncm_interp_params_t));
+		memcpy(buf, a->ncm_sysfs->interp_params, offsetof(ncm_net_params_t, net_device_name));
 		// copy to the end of the known size part, overwriting all the pointers we don't want to save
 		// note that net_device_name has to be the first pointer in unknown size part
 		memcpy(buf + offsetof(ncm_net_params_t, net_device_name), a->ncm_sysfs->interp_params->network.net_device_name,
@@ -61,7 +61,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 					kfree(network->channel_mac);
 				}
 				// copy the given data to the new params
-				memcpy(a->ncm_sysfs->interp_params, buf, offsetof(ncm_net_params_t, net_device_name));
+				memcpy(&a->ncm_sysfs->interp_params->network, buf, offsetof(ncm_net_params_t, net_device_name));
 
 				// create new params
 				network->net_device_name = kmalloc(IFNAMSIZ * channels, GFP_KERNEL);
