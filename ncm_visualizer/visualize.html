@@ -1,7 +1,7 @@
 <html>
 <head>
 	<title>Network Code visualization</title>
-	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.2/themes/smoothness/jquery-ui.css" />
+	<link rel="stylesheet" href="jquery-ui-1.10.2.min.css" />
 	<style type="text/css">
 	.stream {
 	}
@@ -108,8 +108,8 @@
 <div id="template" style="display:none">
 {{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px">{{instr.instr}}</div>{{/.}}</div>{{/.}}
 </div>
-<script src="http://code.jquery.com/jquery-1.9.1.js"></script>
-<script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+<script src="jquery-1.9.1.js"></script>
+<script src="jquery-ui-1.10.2.min.js"></script>
 <script src="jstat-1.0.0.min.js"></script>
 <script src="mustache.js"></script>
 <script src="visualize.js"></script>
