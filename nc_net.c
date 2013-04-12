@@ -423,21 +423,14 @@ int ncm_send_message(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 int ncm_send_sync_hard(ncm_network_t* ncm_net, u32 chan){
 	message_t msg;
 	int ret;
-	printk(KERN_EMERG "test 1");
 	nc_channel_t* channel = &(ncm_net->at[chan]);
-	printk(KERN_EMERG "test 2");
 	if(channel->dev){
-		printk(KERN_EMERG "test 3");
 		msg.skb = alloc_skb(ETH_ZLEN, GFP_KERNEL);//allocate at least zlen
-		printk(KERN_EMERG "test 4");
 //		SKB_PRINT(msg.skb);
 		skb_put(msg.skb, ETH_HLEN);
-		printk(KERN_EMERG "test 5");
 		((struct ethhdr *)msg.skb->head)->h_proto = htons(ETH_P_NC_SYNC);
-		printk(KERN_EMERG "test 6");
 //		SKB_PRINT(msg.skb);
 		ret = nc_sendmsg_hard(broadcast_mac, channel->dev, &msg);
-		printk(KERN_EMERG "test 7");
 		return ret;
 	} else {
 		printk(KERN_WARNING "Trying to send over non existent device (channel %i)", chan);
