@@ -20,22 +20,22 @@ lengths = {'FUTURE': {'mew': 200, 'sigma': 100},
            'LOOP': {'mew': 'n/a', 'sigma': 'n/a'},
            'PAUSE': {'mew': 'n/a', 'sigma': 'n/a'}};
 
-legend = {'FUTURE': {'bg': 'white', 'fg': 'black'},
-           'HALT': {'bg': 'cyan', 'fg': 'black'},
-           'IF': {'bg': 'white', 'fg': 'black'},
-           'MODE': {'bg': 'white', 'fg': 'black'},
-           'CREATE': {'bg': 'white', 'fg': 'black'},
-           'DESTROY': {'bg': 'white', 'fg': 'black'},
-           'SEND': {'bg': 'white', 'fg': 'black'},
+legend = {'FUTURE': {'bg': '#03899C', 'fg': 'black'},
+           'HALT': {'bg': '#FFCB00', 'fg': 'black'},
+           'IF': {'bg': '#2E16B1', 'fg': 'white'},
+           'MODE': {'bg': '#FF7A00', 'fg': 'black'},
+           'CREATE': {'bg': '#604BD8', 'fg': 'black'},
+           'DESTROY': {'bg': '#A68400', 'fg': 'black'},
+           'SEND': {'bg': '#5FC0CE', 'fg': 'black'},
            'RECEIVE': {'bg': 'white', 'fg': 'black'},
-           'SYNC': {'bg': 'white', 'fg': 'black'},
+           'SYNC': {'bg': 'yellowgreen', 'fg': 'black'},
            'HANDLE': {'bg': 'white', 'fg': 'black'},
            'NOP': {'bg': 'white', 'fg': 'black'},
            'SET_COUNTER': {'bg': 'white', 'fg': 'black'},
            'ADD_TO_COUNTER': {'bg': 'white', 'fg': 'black'},
            'SUB_FROM_COUNTER': {'bg': 'white', 'fg': 'black'},
            'LOOP': {'bg': 'black', 'fg': 'white'},
-           'PAUSE': {'bg': 'white', 'fg': 'black'}};
+           'PAUSE': {'bg': 'black', 'fg': 'white'}};
 
 function gaussian_point(x, mew, sigma){
 	var norm = new NormalDistribution(mew,sigma);
