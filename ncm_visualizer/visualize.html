@@ -12,7 +12,7 @@
 		overflow: hidden;
 		/*display: inline-block;*/
 	}
-
+/*
 	.FUTURE{
 		background-color:red;
 		color:black;
@@ -80,7 +80,7 @@
 	.PAUSE{
 		background-color:black;
 		color:white;
-	}
+	}*/
 
 	.left {
 		float:left;
@@ -105,8 +105,14 @@
 	<div>length: {{len}}</div>
 	<div>end: {{end}}</div>
 </div>
+<div id="legend"></div>
 <div id="template" style="display:none">
-{{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px">{{instr.instr}}</div>{{/.}}</div>{{/.}}
+{{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{instr.instr}}</div>{{/.}}</div>{{/.}}
+</div>
+<div id="legend-template" style="display:none">
+<table>{{#legend}}
+	<tr>
+		<td style="background-color:{{bg}}; color:{{fg}}">{{instr}}</td><td></td></tr>{{/legend}}</table>
 </div>
 <script src="jquery-1.9.1.js"></script>
 <script src="jquery-ui-1.10.2.min.js"></script>
