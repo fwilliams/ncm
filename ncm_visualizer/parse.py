@@ -41,20 +41,20 @@ while instr != "":
     instr_arr.append(parsed)
     instr = f.read(instr_size)
 
-lengths = {'FUTURE': {'mew': 1000, 'sigma': 100},
-           'HALT': {'mew': 1000, 'sigma': 100},
-           'IF': {'mew': 1000, 'sigma': 100},
-           'MODE': {'mew': 1000, 'sigma': 100},
-           'CREATE': {'mew': 1000, 'sigma': 100},
-           'DESTROY': {'mew': 1000, 'sigma': 100},
-           'SEND': {'mew': 1000, 'sigma': 100},
-           'RECEIVE': {'mew': 1000, 'sigma': 100},
-           'SYNC': {'mew': 1000, 'sigma': 100},
-           'HANDLE': {'mew': 1000, 'sigma': 100},
-           'NOP': {'mew': 1000, 'sigma': 100},
-           'SET_COUNTER': {'mew': 1000, 'sigma': 100},
-           'ADD_TO_COUNTER': {'mew': 1000, 'sigma': 100},
-           'SUB_FROM_COUNTER': {'mew': 1000, 'sigma': 100}}
+lengths = {'FUTURE': {'mew': 200, 'sigma': 100},
+           'HALT': {'mew': 200, 'sigma': 100},
+           'IF': {'mew': 200, 'sigma': 100},
+           'MODE': {'mew': 200, 'sigma': 100},
+           'CREATE': {'mew': 200, 'sigma': 100},
+           'DESTROY': {'mew': 200, 'sigma': 100},
+           'SEND': {'mew': 200, 'sigma': 100},
+           'RECEIVE': {'mew': 200, 'sigma': 100},
+           'SYNC': {'mew': 200, 'sigma': 100},
+           'HANDLE': {'mew': 200, 'sigma': 100},
+           'NOP': {'mew': 200, 'sigma': 100},
+           'SET_COUNTER': {'mew': 200, 'sigma': 100},
+           'ADD_TO_COUNTER': {'mew': 200, 'sigma': 100},
+           'SUB_FROM_COUNTER': {'mew': 200, 'sigma': 100}}
 
 
 class TreeBuilder:
@@ -64,9 +64,9 @@ class TreeBuilder:
         self.instrs = instrs
 
     def build_tree(self):
-        return self.step(0)
+        return self.step(0, 0)
 
-    def step(self, i):
+    def step(self, i, time):
         instr = self.instrs[i]
         next = i+1
         tree = {}
@@ -86,6 +86,7 @@ class TreeBuilder:
         if(instr['instr'] == 'IF'):
             next = [next, instr['arg1']]
         if(instr['instr'] == 'FUTURE'):
+            instr['scheduled_time'] = time + instr['arg0']
             self.future_queue.append(instr)
         elif(instr['instr'] == 'HALT'):
             self.future_queue = sorted(self.future_queue,
@@ -94,7 +95,7 @@ class TreeBuilder:
 
             pause = {}
             pause['instr'] = "PAUSE"
-            pause['length'] = next_future['arg0'] - 0  # 0 = now - TODO
+            pause['length'] = next_future['scheduled_time'] - time
             pause['children'] = []
             children.append(pause)
             children = pause['children']
@@ -108,11 +109,13 @@ class TreeBuilder:
                 if n <= i:
                     children.append('LOOP')
                 elif n < len(self.instrs):
-                    children.append(self.step(n))
+                    children.append(self.step(n, time +
+                                    lengths[instr['instr']]['mew']))
         elif next <= i:
             children.append('LOOP')
         elif next < len(self.instrs):
-            children.append(self.step(next))
+            children.append(self.step(next, time +
+                            lengths[instr['instr']]['mew']))
         return tree
 
 

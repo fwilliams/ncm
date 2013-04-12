@@ -1,4 +1,4 @@
-var scale = 0.05;
+var scale = 0.2;
 var percentile = 0.50;
 var cached_data;
 
@@ -82,12 +82,12 @@ function straighten(data, stream, time_now, time_now_mean){
 				'length': len * scale -2/*for the broders*/});
 		}
 		if(data.children.length == 1){
-			results = straighten(data.children[0], stream, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? len : data.length.mew));
+			results = straighten(data.children[0], stream, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
 		} else {
 			results = [];
 			for (var c = 0; c < data.children.length; c++){
 				clone = JSON.parse(JSON.stringify(stream));
-				results.push(straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? len : data.length.mew)));
+				results.push(straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew)));
 			}
 		}
 	}
@@ -123,9 +123,7 @@ function render(){
 			fg: legend[instr].fg
 		});
 	}
-	console.log(leg);
-	console.log(Mustache.render($('#legend-template').html(), {'legend':leg}));
-	$('#legend').html(Mustache.render($('#legend-template').html(), {'legend':leg}));
+	$('#legend').html(Mustache.render($('#legend-template').html(), leg));
 }
 //this global variable is used to suppress firing the change event when keyup triggers a change in value in the slider
 var hack = false;

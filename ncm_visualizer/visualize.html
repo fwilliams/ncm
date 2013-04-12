@@ -91,6 +91,9 @@
 	a {
 		cursor: pointer;
 	}
+	#legend {
+		margin-top: 30px;
+	}
 	</style>
 </head>
 <body>
@@ -99,21 +102,20 @@
 <div id="percentile"></div>
 <div>Zoom Level: <input id="zoom" value="0.05"></input> <button id="zoomin">+</button> <button id="zoomout">-</button></div>
 <div id="container"></div>
-<div id="instr-info-template" style="display:none">
+<script type="text/template" id="instr-info-template" style="display:none">
 	<div>{{data.instr.instr}}</div>
 	<div>start: {{time_now}}</div>
 	<div>length: {{len}}</div>
 	<div>end: {{end}}</div>
-</div>
-<div id="legend"></div>
-<div id="template" style="display:none">
+</script>
+<div id="legend" class="clear"></div>
+<script type="text/template" id="template" style="display:none">
 {{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{instr.instr}}</div>{{/.}}</div>{{/.}}
-</div>
-<div id="legend-template" style="display:none">
-<table>{{#legend}}
-	<tr>
-		<td style="background-color:{{bg}}; color:{{fg}}">{{instr}}</td><td></td></tr>{{/legend}}</table>
-</div>
+</script>
+<script type="text/template" id="legend-template" style="display:none">
+<p>Legend:</p>
+<table>{{#.}}<tr><td style="background-color:{{bg}}; color:{{fg}}">{{instr}}</td><td></td></tr>{{/.}}</table>
+</script>
 <script src="jquery-1.9.1.js"></script>
 <script src="jquery-ui-1.10.2.min.js"></script>
 <script src="jstat-1.0.0.min.js"></script>
