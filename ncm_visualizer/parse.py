@@ -118,7 +118,6 @@ class TreeBuilder:
                             lengths[instr['instr']]['mew']))
         return tree
 
-
 treeBuilder = TreeBuilder(instr_arr)
 
 sys.stdout.write("receive_data(")

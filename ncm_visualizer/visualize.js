@@ -53,7 +53,6 @@ function instr_info(t){
 	}
 }
 
-
 function straighten(data, stream, time_now, time_now_mean){
 	var results;
 	var clone;
@@ -79,7 +78,6 @@ function straighten(data, stream, time_now, time_now_mean){
 			'fg':legend.PAUSE.fg,
 			'descr': instr_info_html({time_now: time_now, data: tmp, end:time_now+len, len:len}), 
 			'length': len * scale -2/*for the broders*/});
-		results = stream;
 	}
 	if(data == 'LOOP'){
 		stream.push({
@@ -88,7 +86,7 @@ function straighten(data, stream, time_now, time_now_mean){
 			'fg':legend.LOOP.fg,
 			'descr': '', 
 			'length': 50});
-		results = stream;
+		results = [stream];
 	} else {
 		if(data.instr != 'PAUSE'){
 			stream.push({
@@ -104,7 +102,14 @@ function straighten(data, stream, time_now, time_now_mean){
 			results = [];
 			for (var c = 0; c < data.children.length; c++){
 				clone = JSON.parse(JSON.stringify(stream));
-				results.push(straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew)));
+				
+				var res = straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
+				// pass it through if it's one, otherwise 
+				if(res.length == 1){
+					results.push(res);
+				} else {
+					results.push.apply(results, res);
+				}
 			}
 		}
 	}
