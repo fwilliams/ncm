@@ -350,6 +350,7 @@ void destroy_network(ncm_network_t* ncm_net) {
 			dev_put(chan->dev);
 		}
 	}
+	//TODO: chekck if we need to free any buffers
 	kfree(ncm_net->at);
 	sock_release(ncm_net->receive_socket);
 }
@@ -406,6 +407,7 @@ int ncm_send_message_soft(ncm_network_t* ncm_net, u32 chan, u32 msg_id){
 		goto out;
 	}
 	ret = nc_sendmsg(ncm_net->mac, broadcast_mac, channel->send_socket, channel->ifindex, ncm_net->message_space.at[msg_id].skb->head, ncm_net->message_space.at[msg_id].skb->len, ETH_P_NC);
+	//TODO: check this line
 	kfree_skb(ncm_net->message_space.at[msg_id].skb); //we didn't give up ownership to a network device, it was coppied, so we have to free it
 out:
 	read_unlock(&ncm_net->message_space.at[msg_id].lock);

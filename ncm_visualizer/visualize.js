@@ -1,6 +1,41 @@
-var scale = 0.05;
+var scale = 0.2;
 var percentile = 0.50;
 var cached_data;
+
+// copied from parse.py TODO: move all length calculations into the same file?
+lengths = {'FUTURE': {'mew': 200, 'sigma': 100},
+           'HALT': {'mew': 200, 'sigma': 100},
+           'IF': {'mew': 200, 'sigma': 100},
+           'MODE': {'mew': 200, 'sigma': 100},
+           'CREATE': {'mew': 200, 'sigma': 100},
+           'DESTROY': {'mew': 200, 'sigma': 100},
+           'SEND': {'mew': 200, 'sigma': 100},
+           'RECEIVE': {'mew': 200, 'sigma': 100},
+           'SYNC': {'mew': 200, 'sigma': 100},
+           'HANDLE': {'mew': 200, 'sigma': 100},
+           'NOP': {'mew': 200, 'sigma': 100},
+           'SET_COUNTER': {'mew': 200, 'sigma': 100},
+           'ADD_TO_COUNTER': {'mew': 200, 'sigma': 100},
+           'SUB_FROM_COUNTER': {'mew': 200, 'sigma': 100},
+           'LOOP': {'mew': 'n/a', 'sigma': 'n/a'},
+           'PAUSE': {'mew': 'n/a', 'sigma': 'n/a'}};
+
+legend = {'FUTURE': {'bg': 'white', 'fg': 'black'},
+           'HALT': {'bg': 'cyan', 'fg': 'black'},
+           'IF': {'bg': 'white', 'fg': 'black'},
+           'MODE': {'bg': 'white', 'fg': 'black'},
+           'CREATE': {'bg': 'white', 'fg': 'black'},
+           'DESTROY': {'bg': 'white', 'fg': 'black'},
+           'SEND': {'bg': 'white', 'fg': 'black'},
+           'RECEIVE': {'bg': 'white', 'fg': 'black'},
+           'SYNC': {'bg': 'white', 'fg': 'black'},
+           'HANDLE': {'bg': 'white', 'fg': 'black'},
+           'NOP': {'bg': 'white', 'fg': 'black'},
+           'SET_COUNTER': {'bg': 'white', 'fg': 'black'},
+           'ADD_TO_COUNTER': {'bg': 'white', 'fg': 'black'},
+           'SUB_FROM_COUNTER': {'bg': 'white', 'fg': 'black'},
+           'LOOP': {'bg': 'black', 'fg': 'white'},
+           'PAUSE': {'bg': 'white', 'fg': 'black'}};
 
 function gaussian_point(x, mew, sigma){
 	var norm = new NormalDistribution(mew,sigma);
@@ -19,7 +54,7 @@ function instr_info(t){
 }
 
 
-function flatten(data, stream, time_now, time_now_mean){
+function straighten(data, stream, time_now, time_now_mean){
 	var results;
 	var clone;
 	var len;
@@ -32,12 +67,16 @@ function flatten(data, stream, time_now, time_now_mean){
 		if(len < 0){
 			return [{
 			'instr': {'instr':"Deadline Missed"}, 
+			'bg':'white',
+			'fg':'black',
 			'descr': '', 
 			'length': -1}];
 		}
 		var tmp = {'instr': {'instr':'PAUSE'}};
 		stream.push({
-			'instr': {'instr':'PAUSE'}, 
+			'instr': {'instr':'PAUSE'},
+			'bg':legend.PAUSE.bg,
+			'fg':legend.PAUSE.fg,
 			'descr': instr_info_html({time_now: time_now, data: tmp, end:time_now+len, len:len}), 
 			'length': len * scale -2/*for the broders*/});
 		results = stream;
@@ -45,23 +84,27 @@ function flatten(data, stream, time_now, time_now_mean){
 	if(data == 'LOOP'){
 		stream.push({
 			'instr': {'instr':'LOOP'}, 
+			'bg':legend.LOOP.bg,
+			'fg':legend.LOOP.fg,
 			'descr': '', 
 			'length': 50});
 		results = stream;
 	} else {
 		if(data.instr != 'PAUSE'){
 			stream.push({
-				'instr': data.instr, 
+				'instr': data.instr,
+				'bg':legend[data.instr.instr].bg,
+				'fg':legend[data.instr.instr].fg,
 				'descr': instr_info_html({time_now: time_now, data: data, end:time_now+len, len:len}),
 				'length': len * scale -2/*for the broders*/});
 		}
 		if(data.children.length == 1){
-			results = flatten(data.children[0], stream, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? len : data.length.mew));
+			results = straighten(data.children[0], stream, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
 		} else {
 			results = [];
 			for (var c = 0; c < data.children.length; c++){
 				clone = JSON.parse(JSON.stringify(stream));
-				results.push(flatten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? len : data.length.mew)));
+				results.push(straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew)));
 			}
 		}
 	}
@@ -69,7 +112,7 @@ function flatten(data, stream, time_now, time_now_mean){
 }
 
 function render(){
-	streams = flatten(cached_data, [], 0, 0);
+	streams = straighten(cached_data, [], 0, 0);
 	// calculate the length of the container
 	var maxlen = 0;
 	for (var i in streams){
@@ -79,7 +122,7 @@ function render(){
 		}
 		maxlen = Math.max(maxlen, tot);
 	}
-	$('#container').css('width', maxlen);
+	$('#container').css('width', maxlen*1.1);
 	$('#container').html(Mustache.render($('#template').html(), streams));
 	$('#container').tooltip({
 		items: '.instr',
@@ -88,6 +131,17 @@ function render(){
           return $(this).attr("data-title");
 		}
 	});
+	var leg = [];
+	for(var instr in legend){
+		leg.push({
+			instr: instr,
+			bg: legend[instr].bg,
+			fg: legend[instr].fg,
+			mean: lengths[instr].mew,
+			std: lengths[instr].sigma
+		});
+	}
+	$('#legend').html(Mustache.render($('#legend-template').html(), leg));
 }
 //this global variable is used to suppress firing the change event when keyup triggers a change in value in the slider
 var hack = false;
