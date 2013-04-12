@@ -41,20 +41,20 @@ while instr != "":
     instr_arr.append(parsed)
     instr = f.read(instr_size)
 
-lengths = {'FUTURE': 1000,
-           'HALT': 1000,
-           'IF': 1000,
-           'MODE': 1000,
-           'CREATE': 1000,
-           'DESTROY': 1000,
-           'SEND': 1000,
-           'RECEIVE': 1000,
-           'SYNC': 1000,
-           'HANDLE': 1000,
-           'NOP': 1000,
-           'SET_COUNTER': 1000,
-           'ADD_TO_COUNTER': 1000,
-           'SUB_FROM_COUNTER': 1000}
+lengths = {'FUTURE': {'mew': 1000, 'sigma': 100},
+           'HALT': {'mew': 1000, 'sigma': 100},
+           'IF': {'mew': 1000, 'sigma': 100},
+           'MODE': {'mew': 1000, 'sigma': 100},
+           'CREATE': {'mew': 1000, 'sigma': 100},
+           'DESTROY': {'mew': 1000, 'sigma': 100},
+           'SEND': {'mew': 1000, 'sigma': 100},
+           'RECEIVE': {'mew': 1000, 'sigma': 100},
+           'SYNC': {'mew': 1000, 'sigma': 100},
+           'HANDLE': {'mew': 1000, 'sigma': 100},
+           'NOP': {'mew': 1000, 'sigma': 100},
+           'SET_COUNTER': {'mew': 1000, 'sigma': 100},
+           'ADD_TO_COUNTER': {'mew': 1000, 'sigma': 100},
+           'SUB_FROM_COUNTER': {'mew': 1000, 'sigma': 100}}
 
 
 class TreeBuilder:

@@ -95,12 +95,14 @@
 </head>
 <body>
 <div id="dialog" style="display:none"></div>
+<div>Percentile: <input id="perc" value="0.50"></input></div>
+<div id="percentile"></div>
 <div><a id="zoomin">+</a> <a id="zoomout">-</a></div>
 <div id="container"></div>
 <div id="instr-info-template" style="display:none">
 	<div>{{data.instr.instr}}</div>
 	<div>start: {{time_now}}</div>
-	<div>length: {{data.length}}</div>
+	<div>length: {{len}}</div>
 	<div>end: {{end}}</div>
 </div>
 <div id="template" style="display:none">
@@ -108,6 +110,7 @@
 </div>
 <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
 <script src="http://code.jquery.com/ui/1.10.2/jquery-ui.js"></script>
+<script src="jstat-1.0.0.min.js"></script>
 <script src="mustache.js"></script>
 <script src="visualize.js"></script>
 <script src="data.json"></script>
