@@ -120,6 +120,4 @@ class TreeBuilder:
 
 treeBuilder = TreeBuilder(instr_arr)
 
-sys.stdout.write("receive_data(")
 json.dump(treeBuilder.build_tree(), sys.stdout)
-sys.stdout.write(")")

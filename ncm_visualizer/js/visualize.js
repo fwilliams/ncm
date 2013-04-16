@@ -17,25 +17,25 @@ lengths = {'FUTURE': {'mew': 200, 'sigma': 100},
            'SET_COUNTER': {'mew': 200, 'sigma': 100},
            'ADD_TO_COUNTER': {'mew': 200, 'sigma': 100},
            'SUB_FROM_COUNTER': {'mew': 200, 'sigma': 100},
-           'LOOP': {'mew': 'n/a', 'sigma': 'n/a'},
-           'PAUSE': {'mew': 'n/a', 'sigma': 'n/a'}};
+           'PAUSE': {'mew': 'n/a', 'sigma': 'n/a'},
+           'LOOP': {'mew': 'n/a', 'sigma': 'n/a'}};
 
-legend = {'FUTURE': {'bg': '#03899C', 'fg': 'black'},
-           'HALT': {'bg': '#FFCB00', 'fg': 'black'},
-           'IF': {'bg': '#2E16B1', 'fg': 'white'},
-           'MODE': {'bg': '#FF7A00', 'fg': 'black'},
-           'CREATE': {'bg': '#604BD8', 'fg': 'black'},
-           'DESTROY': {'bg': '#A68400', 'fg': 'black'},
-           'SEND': {'bg': '#5FC0CE', 'fg': 'black'},
-           'RECEIVE': {'bg': 'white', 'fg': 'black'},
-           'SYNC': {'bg': 'yellowgreen', 'fg': 'black'},
-           'HANDLE': {'bg': 'white', 'fg': 'black'},
-           'NOP': {'bg': 'white', 'fg': 'black'},
-           'SET_COUNTER': {'bg': 'white', 'fg': 'black'},
-           'ADD_TO_COUNTER': {'bg': 'white', 'fg': 'black'},
-           'SUB_FROM_COUNTER': {'bg': 'white', 'fg': 'black'},
-           'LOOP': {'bg': 'black', 'fg': 'white'},
-           'PAUSE': {'bg': 'black', 'fg': 'white'}};
+legend = {'FUTURE': {'bg': '#295f99', 'fg': 'white'},
+           'HALT': {'bg': '#ff7f00', 'fg': 'black'},
+           'IF': {'bg': '#ffff00', 'fg': 'black'},
+           'MODE': {'bg': '#7f007f', 'fg': 'black'},
+           'CREATE': {'bg': '#00a833', 'fg': 'black'},
+           'DESTROY': {'bg': '#ff0000', 'fg': 'black'},
+           'SEND': {'bg': '#94afcc', 'fg': 'black'},
+           'RECEIVE': {'bg': '#994b00', 'fg': 'white'},
+           'SYNC': {'bg': '#590b3f', 'fg': 'white'},
+           'HANDLE': {'bg': '#ffff7f', 'fg': 'black'},
+           'NOP': {'bg': '#148366', 'fg': 'black'},
+           'SET_COUNTER': {'bg': '#ff3f00', 'fg': 'black'},
+           'ADD_TO_COUNTER': {'bg': '#7fd319', 'fg': 'black'},
+           'SUB_FROM_COUNTER': {'bg': '#bf003f', 'fg': 'black'},
+           'PAUSE': {'bg': '#196019', 'fg': 'white'},
+           'LOOP': {'bg': '#000000', 'fg': 'white'}};
 
 function gaussian_point(x, mew, sigma){
 	var norm = new NormalDistribution(mew,sigma);
@@ -48,9 +48,25 @@ function instr_info_html(data){
 function instr_info(t){
 	$this = $(t);
 	if($this.attr('data-title')){
-		$('#dialog').html($this.attr('data-title'));
-		$('#dialog').dialog();
+		$('.modal-body').html($this.attr('data-title'));
+		$('.modal').modal({backdrop: false}).draggable({
+			handle: ".modal-header"
+		});
 	}
+}
+
+function make_spacer(instrs){
+	var len = 0;
+	for(var i in instrs){
+		instr = instrs[i];
+		len += instr.length;
+	}
+	return [{
+		'instr': {'instr':"&nbsp;"},
+		'bg':'',
+		'fg':'',
+		'descr':'',
+		'length':len}];
 }
 
 function straighten(data, stream, time_now, time_now_mean){
@@ -59,16 +75,24 @@ function straighten(data, stream, time_now, time_now_mean){
 	var len;
 	if (data !== 'LOOP' && data.instr != 'PAUSE') {
 		len = gaussian_point(percentile, data.length.mew, data.length.sigma);
+		if(len < 0){
+			return [{
+			'instr': {'instr':"Negative Time"},
+			'bg':'white',
+			'fg':'black',
+			'descr': '',
+			'length': -1}];
+		}
 	}
 	if(data.instr == 'PAUSE'){
 		//contract the length of pauses as we expand the other instructions
 		len = data.length - (time_now - time_now_mean);
 		if(len < 0){
 			return [{
-			'instr': {'instr':"Deadline Missed"}, 
+			'instr': {'instr':"Deadline Missed"},
 			'bg':'white',
 			'fg':'black',
-			'descr': '', 
+			'descr': '',
 			'length': -1}];
 		}
 		var tmp = {'instr': {'instr':'PAUSE'}};
@@ -76,15 +100,15 @@ function straighten(data, stream, time_now, time_now_mean){
 			'instr': {'instr':'PAUSE'},
 			'bg':legend.PAUSE.bg,
 			'fg':legend.PAUSE.fg,
-			'descr': instr_info_html({time_now: time_now, data: tmp, end:time_now+len, len:len}), 
-			'length': len * scale -2/*for the broders*/});
+			'descr': instr_info_html({time_now: time_now, data: tmp, end:time_now+len, len:len}),
+			'length': len * scale });
 	}
 	if(data == 'LOOP'){
 		stream.push({
-			'instr': {'instr':'LOOP'}, 
+			'instr': {'instr':'LOOP'},
 			'bg':legend.LOOP.bg,
 			'fg':legend.LOOP.fg,
-			'descr': '', 
+			'descr': '',
 			'length': 50});
 		results = [stream];
 	} else {
@@ -94,19 +118,19 @@ function straighten(data, stream, time_now, time_now_mean){
 				'bg':legend[data.instr.instr].bg,
 				'fg':legend[data.instr.instr].fg,
 				'descr': instr_info_html({time_now: time_now, data: data, end:time_now+len, len:len}),
-				'length': len * scale -2/*for the broders*/});
+				'length': len * scale });
 		}
 		if(data.children.length == 1){
 			results = straighten(data.children[0], stream, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
 		} else {
 			results = [];
+			var spacer = make_spacer(stream);
 			for (var c = 0; c < data.children.length; c++){
-				clone = JSON.parse(JSON.stringify(stream));
-				
-				var res = straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
+
+				var res = straighten(data.children[c], c === 0 ? stream : spacer, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
 				// pass it through if it's one, otherwise 
 				if(res.length == 1){
-					results.push(res);
+					results.push(res[0]);
 				} else {
 					results.push.apply(results, res);
 				}
@@ -117,25 +141,30 @@ function straighten(data, stream, time_now, time_now_mean){
 }
 
 function render(){
-	streams = straighten(cached_data, [], 0, 0);
-	// calculate the length of the container
-	var maxlen = 0;
-	for (var i in streams){
-		var tot = 0;
-		for (var j in streams[i]){
-			tot += streams[i][j].length+2;
-		}
-		maxlen = Math.max(maxlen, tot);
+	var res = [];
+	for (var vm in cached_data){
+		var data = cached_data[vm];
+		streams = straighten(data, [], 0, 0);
+		res.push({title: vm, data: streams});
 	}
-	$('#container').css('width', maxlen*1.1);
-	$('#container').html(Mustache.render($('#template').html(), streams));
-	$('#container').tooltip({
-		items: '.instr',
-		// support html tooltips
-		content:function(){
-          return $(this).attr("data-title");
-		}
+	$('#container').html(Mustache.render($('#template').html(), res));
+	$('.stream').each(function(i, ele){
+		$this = $(ele);
+		// calculate the length of the container
+		var maxlen = 0;
+		$this.children().each(function(i, ele){
+			maxlen += $(ele).width();
+		});
+		$this.css('width', maxlen + 1);
+		// add tooltips
+		$this.find('.instr').tooltip({
+			html: true
+		});
+		$this.click(function(){
+			instr_info(this);
+		});
 	});
+
 	var leg = [];
 	for(var instr in legend){
 		leg.push({
@@ -143,7 +172,8 @@ function render(){
 			bg: legend[instr].bg,
 			fg: legend[instr].fg,
 			mean: lengths[instr].mew,
-			std: lengths[instr].sigma
+			std: lengths[instr].sigma,
+			value: lengths[instr].mew == 'n/a' ? 'n/a' : gaussian_point(percentile, lengths[instr].mew, lengths[instr].sigma)
 		});
 	}
 	$('#legend').html(Mustache.render($('#legend-template').html(), leg));
@@ -158,7 +188,7 @@ function receive_data(data){
 		if(!isNaN(num) && percentile !== num){
 			percentile = num;
 			hack = true;
-			$('#percentile').slider('value', num);
+			$('#percentile').slider('setValue', num);
 			hack = false;
 			render();
 		}
@@ -167,15 +197,14 @@ function receive_data(data){
 		max: 0.99,
 		min: 0.01,
 		value: 0.5,
-        step: 0.01,
-		change: function(event, ui){
-			if(hack) return;
-			var num = Number(ui.value);
-			if(!isNaN(num && percentile !== num)){
-				percentile = num;
-				$('#perc').val(num);
-				render();
-			}
+        step: 0.01
+    }).on('slide', function(ev){
+		if(hack) return;
+		var num = Number(ev.value);
+		if(!isNaN(num && percentile !== num)){
+			percentile = num;
+			$('#perc').val(num);
+			render();
 		}
 	});
 	$('#zoom').keyup(function(){
