@@ -2,15 +2,29 @@
 import json
 import sys
 import struct
+import binascii
+
+output = None
+
+if sys.version < '3':
+    def b(x):
+        return x
+    output = sys.stdout
+else:
+    import codecs
+
+    def b(x):
+        return codecs.utf_8_encode(x)[0]
+    output = sys.stdout.buffer
 
 
 def format_mac(mac):
-    return mac.replace(':', '').decode('hex')
+    return binascii.unhexlify(b(mac.replace(':', '')))
 
 params = json.load(sys.stdin)
 
-sys.stdout.write(struct.pack('I', len(params['channels'])) ) #+ '\x00\x00\x00\x00')
+output.write(struct.pack('I', len(params['channels'])))  # + '\x00\x00\x00\x00')
 for param in params['channels']:
-    sys.stdout.write(struct.pack('16s', str(param['dev'])))
+    output.write(b(param['dev'] + '\x00'*(16-len(param['dev']))))
 for param in params['channels']:
-    sys.stdout.write(struct.pack('6s', format_mac(param['mac'])))
+    output.write(struct.pack('6s', format_mac(param['mac'])))
