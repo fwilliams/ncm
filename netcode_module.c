@@ -16,7 +16,6 @@ MODULE_DESCRIPTION("Network Code interpreter module");
 static ncm_interpreter_t ncm_interp;
 static ncm_program_t program;
 static ncm_interp_params_t	interp_params;
-static ncm_sysfs_t sysfs;
 
 static int chrdev_major;
 
@@ -57,7 +56,7 @@ static struct file_operations fops = {
 
 
 int init_module() {
-	int sysfs_ret;
+	int sysfs_ret = 0;
 
 #ifdef VM1
 	make_program(&program, &interp_params.network, TYPE_ARCH1);
@@ -72,7 +71,7 @@ int init_module() {
 
 	init_interpreter(&ncm_interp);
 
-	sysfs_ret = nc_init_sysfs(&sysfs, &ncm_interp, &program, &interp_params);
+	sysfs_ret = nc_init_sysfs(&ncm_interp, &program, &interp_params);
 
 #ifndef VM
 	start_interpreter(&ncm_interp, &program, &interp_params);
@@ -83,7 +82,7 @@ int init_module() {
 
 void cleanup_module(void) {
 
-	ncm_sysfs_cleanup(&sysfs);
+	ncm_sysfs_cleanup();
 
 	if(is_running(&ncm_interp))
 		stop_interpreter(&ncm_interp);

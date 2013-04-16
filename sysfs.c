@@ -7,31 +7,39 @@
 
 //    sscanf(buf, "%d", &a->value);
 
-static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
-        char *buf)
-{
-	ncm_attr_t *a = container_of(attr, ncm_attr_t, attr);
+
+static ncm_sysfs_t sysfs;
+
+// the attrs here are wrapped twice: once inside a kobj_attribute and once inside a ncm_attr_t
+static struct attribute *attrs[MAX_VARIABLES+1];
+
+static struct attribute_group attr_group = {
+	.name = "varspace",
+	.attrs = attrs,
+};
+
+static ssize_t ncm_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf) {
  	u32 channels;
-	if(strcmp(attr->name, "code") == 0){
+	if(strcmp(attr->attr.name, "code") == 0){
 		// dump the interpreter array
-		memcpy(buf, a->ncm_sysfs->program->instructions, sizeof(ncm_instr_t) * a->ncm_sysfs->program->length);
-		return sizeof(ncm_instr_t) * a->ncm_sysfs->program->length;
-	} else if(strcmp(attr->name, "control") == 0){
-		if(is_running(a->ncm_sysfs->ncm_interp)){
+		memcpy(buf, sysfs.program->instructions, sizeof(ncm_instr_t) * sysfs.program->length);
+		return sizeof(ncm_instr_t) * sysfs.program->length;
+	} else if(strcmp(attr->attr.name, "control") == 0){
+		if(is_running(sysfs.ncm_interp)){
 			memcpy(buf, "running\n", sizeof("running\n"));
 			return sizeof("running\n");
 		} else {
 			memcpy(buf, "not running\n", sizeof("not running\n"));
 			return sizeof("not running\n");
 		}
-	} else if(strcmp(attr->name, "params") == 0){
-		channels = a->ncm_sysfs->interp_params->network.channels;
-		memcpy(buf, a->ncm_sysfs->interp_params, offsetof(ncm_net_params_t, net_device_name));
+	} else if(strcmp(attr->attr.name, "params") == 0){
+		channels = sysfs.interp_params->network.channels;
+		memcpy(buf, sysfs.interp_params, offsetof(ncm_net_params_t, net_device_name));
 		// copy to the end of the known size part, overwriting all the pointers we don't want to save
 		// note that net_device_name has to be the first pointer in unknown size part
-		memcpy(buf + offsetof(ncm_net_params_t, net_device_name), a->ncm_sysfs->interp_params->network.net_device_name,
+		memcpy(buf + offsetof(ncm_net_params_t, net_device_name), sysfs.interp_params->network.net_device_name,
 				channels * IFNAMSIZ);
-		memcpy(buf + offsetof(ncm_net_params_t, net_device_name) + channels * IFNAMSIZ, a->ncm_sysfs->interp_params->network.channel_mac,
+		memcpy(buf + offsetof(ncm_net_params_t, net_device_name) + channels * IFNAMSIZ, sysfs.interp_params->network.channel_mac,
 				channels * ETH_ALEN);
 		return offsetof(ncm_net_params_t, net_device_name) + channels * (IFNAMSIZ + ETH_ALEN);
 	} else {
@@ -40,19 +48,16 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 //    return scnprintf(buf, PAGE_SIZE, "%d\n", a->value);
 }
 
-static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
-        const char *buf, size_t len)
-{
- 	ncm_attr_t *a = container_of(attr, ncm_attr_t, attr);
+static ssize_t ncm_sysfs_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t len) {
  	u32 channels;
  	ncm_net_params_t *network;
-	if(strcmp(attr->name, "params") == 0){
+	if(strcmp(attr->attr.name, "params") == 0){
 		// make sure we don't modify interpreter state while it's running
-		if(!is_running(a->ncm_sysfs->ncm_interp)){
+		if(!is_running(sysfs.ncm_interp)){
 			// make sure the input is correctly formatted
 			channels = ((ncm_interp_params_t*)buf)->network.channels;
 			if(len == offsetof(ncm_net_params_t, net_device_name) + (IFNAMSIZ+ETH_ALEN) * channels){
-				network = &a->ncm_sysfs->interp_params->network;
+				network = &sysfs.interp_params->network;
 				// free the old params if there were any
 				if(network->net_device_name != 0){
 					kfree(network->net_device_name);
@@ -61,7 +66,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 					kfree(network->channel_mac);
 				}
 				// copy the given data to the new params
-				memcpy(a->ncm_sysfs->interp_params, buf, offsetof(ncm_net_params_t, net_device_name));
+				memcpy(sysfs.interp_params, buf, offsetof(ncm_net_params_t, net_device_name));
 
 				// create new params
 				network->net_device_name = kmalloc(IFNAMSIZ * channels, GFP_KERNEL);
@@ -76,39 +81,39 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 		} else {
 			printk(KERN_WARNING "Tried to load params into running ncm program. Please stop it first.");
 		}
-	} else if(strcmp(attr->name, "code") == 0){
+	} else if(strcmp(attr->attr.name, "code") == 0){
 		// make sure we don't modify interpreter state while it's running
-		if(!is_running(a->ncm_sysfs->ncm_interp)){
+		if(!is_running(sysfs.ncm_interp)){
 			// free the instructions if there were any
-			if(a->ncm_sysfs->program->instructions != 0){
-				kfree(a->ncm_sysfs->program->instructions);
+			if(sysfs.program->instructions != 0){
+				kfree(sysfs.program->instructions);
 			}
 			// create new instructions block
-			a->ncm_sysfs->program->instructions = kmalloc(len, GFP_KERNEL);
-			a->ncm_sysfs->program->length = len;
+			sysfs.program->instructions = kmalloc(len, GFP_KERNEL);
+			sysfs.program->length = len;
 			// copy the given data into it
-			memcpy(a->ncm_sysfs->program->instructions, buf, len);
+			memcpy(sysfs.program->instructions, buf, len);
 		} else {
 			printk(KERN_WARNING "Tried to load code into running ncm program. Please stop it first.");
 		}
-	} else if(strcmp(attr->name, "control") == 0){
+	} else if(strcmp(attr->attr.name, "control") == 0){
 		// if you write "run" into the command
 		if(memcmp(buf, "run", 3) == 0){
-			if(!is_running(a->ncm_sysfs->ncm_interp)){
-				if(a->ncm_sysfs->program->instructions == NULL){
+			if(!is_running(sysfs.ncm_interp)){
+				if(sysfs.program->instructions == NULL){
 		            printk(KERN_WARNING "Cannot start because no network code program has been loaded.");
 					return len;
 				}
-				if(a->ncm_sysfs->interp_params->network.net_device_name == NULL || a->ncm_sysfs->interp_params->network.channel_mac == NULL){
+				if(sysfs.interp_params->network.net_device_name == NULL || sysfs.interp_params->network.channel_mac == NULL){
 		            printk(KERN_WARNING "Cannot start because no network code parameters have been loaded.");
 					return len;
 				}
-				start_interpreter(a->ncm_sysfs->ncm_interp, a->ncm_sysfs->program, a->ncm_sysfs->interp_params);
+				start_interpreter(sysfs.ncm_interp, sysfs.program, sysfs.interp_params);
 			}
 		// if you write "stop" into the command
 		} else if (memcmp(buf, "stop", 4) == 0){
-			if(is_running(a->ncm_sysfs->ncm_interp)){
-				stop_interpreter(a->ncm_sysfs->ncm_interp);
+			if(is_running(sysfs.ncm_interp)){
+				stop_interpreter(sysfs.ncm_interp);
 			}
 		} else {
 			return len;
@@ -120,53 +125,71 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
     return len;// return ??
 }
 
-int nc_init_sysfs(ncm_sysfs_t *sysfs, ncm_interpreter_t *ncm_interp,
+struct kobj_attribute nc_sysfs_attr_code = {
+	.attr = {"code", 0644},
+	.show = ncm_sysfs_show,
+	.store = ncm_sysfs_store
+};
+struct kobj_attribute nc_sysfs_attr_params = {
+	.attr = {"params", 0644},
+	.show = ncm_sysfs_show,
+	.store = ncm_sysfs_store
+};
+struct kobj_attribute nc_sysfs_attr_control = {
+	.attr = {"control", 0644},
+	.show = ncm_sysfs_show,
+	.store = ncm_sysfs_store
+};
+char sysfs_var_names[MAX_VARIABLES][ATTR_NAME_LEN];
+
+int nc_init_sysfs(ncm_interpreter_t *ncm_interp,
 		ncm_program_t *program,  ncm_interp_params_t *interp_params) {
-    int err = -1;
+    int err = 0, i;
+    struct kobj_attribute *kattr;
 
     // pack the struct in the needed format to set up the sysfs device
-    sysfs->program = program;
-    sysfs->interp_params = interp_params;
-    sysfs->ncm_interp = ncm_interp;
-    memcpy(sysfs->nc_sysfs_attr_code_name, "code", 5);
-    sysfs->nc_sysfs_attr_code.attr.name=sysfs->nc_sysfs_attr_code_name;
-    sysfs->nc_sysfs_attr_code.attr.mode=0644;
-    sysfs->nc_sysfs_attr_code.ncm_sysfs=sysfs;
-    memcpy(sysfs->nc_sysfs_attr_code_params, "params", 7);
-    sysfs->nc_sysfs_attr_params.attr.name=sysfs->nc_sysfs_attr_code_params;
-    sysfs->nc_sysfs_attr_params.attr.mode=0644;
-    sysfs->nc_sysfs_attr_params.ncm_sysfs=sysfs;
-    memcpy(sysfs->nc_sysfs_attr_control_name, "control", 8);
-    sysfs->nc_sysfs_attr_control.attr.name=sysfs->nc_sysfs_attr_control_name;
-    sysfs->nc_sysfs_attr_control.attr.mode=0644;
-    sysfs->nc_sysfs_attr_control.ncm_sysfs=sysfs;
-    sysfs->attrs[0] = &sysfs->nc_sysfs_attr_code.attr;
-    sysfs->attrs[1] = &sysfs->nc_sysfs_attr_control.attr;
-    sysfs->attrs[2] = &sysfs->nc_sysfs_attr_params.attr;
-    sysfs->attrs[3] = NULL;
-	sysfs->nc_kobj_ops.show = ncm_sysfs_show;
-	sysfs->nc_kobj_ops.store = ncm_sysfs_store;
-    sysfs->nc_kobj_type.sysfs_ops = &sysfs->nc_kobj_ops;
-    sysfs->nc_kobj_type.default_attrs = sysfs->attrs;
+    sysfs.program = program;
+    sysfs.interp_params = interp_params;
+    sysfs.ncm_interp = ncm_interp;
 
-    sysfs->nc_kobj = kzalloc(sizeof(*sysfs->nc_kobj), GFP_KERNEL);
-    if (sysfs->nc_kobj) {
-        kobject_init(sysfs->nc_kobj, &sysfs->nc_kobj_type);
-        if (kobject_add(sysfs->nc_kobj, NULL, "%s", "network_code")) {
-             err = -1;
-             printk(KERN_WARNING "Sysfs creation failed");
-             kobject_put(sysfs->nc_kobj);
-             sysfs->nc_kobj = NULL;
-        } else {
-			err = 0;
-        }
-    }
+	sysfs.nc_kobj = kobject_create_and_add("network_code", NULL);
+	if (!sysfs.nc_kobj)
+		return -ENOMEM;
+
+	for(i=0; i<MAX_VARIABLES; i++){
+		kattr = kzalloc(sizeof(struct kobj_attribute), GFP_KERNEL);
+		snprintf(sysfs_var_names[i], ATTR_NAME_LEN, "%i" , i);
+		kattr->attr.name = sysfs_var_names[i];
+		kattr->attr.mode = 0666;
+		kattr->show	= ncm_sysfs_show;
+		kattr->store = ncm_sysfs_store;
+		attrs[i] = &kattr->attr;
+	}
+	attrs[i] = NULL;
+
+	err = sysfs_create_file(sysfs.nc_kobj, &nc_sysfs_attr_code.attr);
+	if (err) goto err;
+	err = sysfs_create_file(sysfs.nc_kobj, &nc_sysfs_attr_control.attr);
+	if (err) goto err;
+	err = sysfs_create_file(sysfs.nc_kobj, &nc_sysfs_attr_params.attr);
+	if (err) goto err;
+	err = sysfs_create_group(sysfs.nc_kobj, &attr_group);
+	if (err) goto err;
+
+    return err;
+err:
+	kobject_put(sysfs.nc_kobj);
     return err;
 }
 
-void ncm_sysfs_cleanup(ncm_sysfs_t *sysfs){
-	if (sysfs->nc_kobj) {
-		kobject_put(sysfs->nc_kobj);
-		kfree(sysfs->nc_kobj);
+void ncm_sysfs_cleanup(void){
+	//free attrs
+	int i;
+	for(i=0; i<MAX_VARIABLES; i++){
+		if(attrs[i] != 0)
+			kfree(container_of(attrs[i], struct kobj_attribute, attr));
+	}
+	if (sysfs.nc_kobj) {
+		kobject_put(sysfs.nc_kobj);
 	}
 }
