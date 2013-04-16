@@ -42,7 +42,7 @@ static ssize_t varspace_chrdev_write(struct file* filp, const char __user* buff,
 
 	copy_from_user(kbuf, buff, len);
 
-	set_variable_data(&ncm_interp.variable_space, 0, &kbuf[0], len);
+	set_variable_data(&ncm_interp.variable_space, 1, &kbuf[0], len);
 
 	kbuf[len] = '\0';
 	debug_print("Wrote %s to variable 0", &kbuf[0]);
