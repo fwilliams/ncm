@@ -12,11 +12,11 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 {
 	ncm_attr_t *a = container_of(attr, ncm_attr_t, attr);
  	u32 channels;
-	if(memcmp(attr->name, "code", 4) == 0){
+	if(strcmp(attr->name, "code") == 0){
 		// dump the interpreter array
 		memcpy(buf, a->ncm_sysfs->program->instructions, sizeof(ncm_instr_t) * a->ncm_sysfs->program->length);
 		return sizeof(ncm_instr_t) * a->ncm_sysfs->program->length;
-	} else if(memcmp(attr->name, "control", 7) == 0){
+	} else if(strcmp(attr->name, "control") == 0){
 		if(is_running(a->ncm_sysfs->ncm_interp)){
 			memcpy(buf, "running\n", sizeof("running\n"));
 			return sizeof("running\n");
@@ -24,7 +24,7 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct attribute *attr,
 			memcpy(buf, "not running\n", sizeof("not running\n"));
 			return sizeof("not running\n");
 		}
-	} else if(memcmp(attr->name, "params", 6) == 0){
+	} else if(strcmp(attr->name, "params") == 0){
 		channels = a->ncm_sysfs->interp_params->network.channels;
 		memcpy(buf, a->ncm_sysfs->interp_params, offsetof(ncm_net_params_t, net_device_name));
 		// copy to the end of the known size part, overwriting all the pointers we don't want to save
@@ -46,7 +46,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
  	ncm_attr_t *a = container_of(attr, ncm_attr_t, attr);
  	u32 channels;
  	ncm_net_params_t *network;
-	if(memcmp(attr->name, "params", 6) == 0){
+	if(strcmp(attr->name, "params") == 0){
 		// make sure we don't modify interpreter state while it's running
 		if(!is_running(a->ncm_sysfs->ncm_interp)){
 			// make sure the input is correctly formatted
@@ -76,7 +76,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 		} else {
 			printk(KERN_WARNING "Tried to load params into running ncm program. Please stop it first.");
 		}
-	} else if(memcmp(attr->name, "code", 4) == 0){
+	} else if(strcmp(attr->name, "code") == 0){
 		// make sure we don't modify interpreter state while it's running
 		if(!is_running(a->ncm_sysfs->ncm_interp)){
 			// free the instructions if there were any
@@ -91,9 +91,9 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 		} else {
 			printk(KERN_WARNING "Tried to load code into running ncm program. Please stop it first.");
 		}
-	} else if(memcmp(attr->name, "control", 7) == 0){
+	} else if(strcmp(attr->name, "control") == 0){
 		// if you write "run" into the command
-		if(memcmp(buf, "run", 3) == 0){
+		if(strcmp(buf, "run") == 0){
 			if(!is_running(a->ncm_sysfs->ncm_interp)){
 				if(a->ncm_sysfs->program->instructions == NULL){
 		            printk(KERN_WARNING "Cannot start because no network code program has been loaded.");
@@ -106,7 +106,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 				start_interpreter(a->ncm_sysfs->ncm_interp, a->ncm_sysfs->program, a->ncm_sysfs->interp_params);
 			}
 		// if you write "stop" into the command
-		} else if (memcmp(buf, "stop", 4) == 0){
+		} else if (strcmp(buf, "stop") == 0){
 			if(is_running(a->ncm_sysfs->ncm_interp)){
 				stop_interpreter(a->ncm_sysfs->ncm_interp);
 			}
