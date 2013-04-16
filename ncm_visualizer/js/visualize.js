@@ -45,8 +45,8 @@ function gaussian_point(x, mew, sigma){
 function instr_info_html(data){
 	return Mustache.render(document.getElementById('instr-info-template').innerHTML, data);
 }
-function instr_info(t){
-	$this = $(t);
+function instr_info($this){
+	console.log($this);
 	if($this.attr('data-title')){
 		$('.modal-body').html($this.attr('data-title'));
 		$('.modal').modal({backdrop: false}).draggable({
@@ -139,6 +139,28 @@ function straighten(data, stream, time_now, time_now_mean){
 	}
 	return results;
 }
+function throttle(fn, threshhold, scope) {
+  threshhold || (threshhold = 250);
+  var last,
+      deferTimer;
+  return function () {
+    var context = scope || this;
+
+    var now = +new Date,
+        args = arguments;
+    if (last && now < last + threshhold) {
+      // hold on to it
+      clearTimeout(deferTimer);
+      deferTimer = setTimeout(function () {
+        last = now;
+        fn.apply(context, args);
+      }, threshhold);
+    } else {
+      last = now;
+      fn.apply(context, args);
+    }
+  };
+}
 
 function render(){
 	var res = [];
@@ -155,13 +177,12 @@ function render(){
 		$this.children().each(function(i, ele){
 			maxlen += $(ele).width();
 		});
-		$this.css('width', maxlen + 1);
+		$this.css('width', maxlen *1.1);
 		// add tooltips
 		$this.find('.instr').tooltip({
 			html: true
-		});
-		$this.click(function(){
-			instr_info(this);
+		}).click(function(){
+			instr_info($(this));
 		});
 	});
 
@@ -198,7 +219,7 @@ function receive_data(data){
 		min: 0.01,
 		value: 0.5,
         step: 0.01
-    }).on('slide', function(ev){
+    }).on('slide', throttle(function(ev){
 		if(hack) return;
 		var num = Number(ev.value);
 		if(!isNaN(num && percentile !== num)){
@@ -206,7 +227,7 @@ function receive_data(data){
 			$('#perc').val(num);
 			render();
 		}
-	});
+	}, 200, this));
 	$('#zoom').keyup(function(){
 		var num = Number(this.value);
 		if(!isNaN(num) && scale !== num){
