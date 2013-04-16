@@ -93,7 +93,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 		}
 	} else if(strcmp(attr->name, "control") == 0){
 		// if you write "run" into the command
-		if(strcmp(buf, "run") == 0){
+		if(memcmp(buf, "run", 3) == 0){
 			if(!is_running(a->ncm_sysfs->ncm_interp)){
 				if(a->ncm_sysfs->program->instructions == NULL){
 		            printk(KERN_WARNING "Cannot start because no network code program has been loaded.");
@@ -106,7 +106,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 				start_interpreter(a->ncm_sysfs->ncm_interp, a->ncm_sysfs->program, a->ncm_sysfs->interp_params);
 			}
 		// if you write "stop" into the command
-		} else if (strcmp(buf, "stop") == 0){
+		} else if (memcmp(buf, "stop", 4) == 0){
 			if(is_running(a->ncm_sysfs->ncm_interp)){
 				stop_interpreter(a->ncm_sysfs->ncm_interp);
 			}
