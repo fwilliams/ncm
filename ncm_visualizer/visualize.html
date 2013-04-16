@@ -28,9 +28,6 @@
 	a {
 		cursor: pointer;
 	}
-	.title {
-		font-weight: bold;
-	}
 	.table {
 		background-color: white;
 	}
@@ -124,11 +121,11 @@
 	</script>
 	<script type="text/template" id="legend-template" style="display:none">
 	<table class="table table-bordered table-striped">
-		<tr class="title">
-			<td>Instruction</td>
-			<td>Mean</td>
-			<td>Standard Deviation</td>
-			<td>Value</td>
+		<tr>
+			<th>Instruction</th>
+			<th>Mean</th>
+			<th>Standard Deviation</th>
+			<th>Value</th>
 		</tr>
 	{{#.}}
 	<tr>
