@@ -20,22 +20,22 @@ lengths = {'FUTURE': {'mew': 200, 'sigma': 100},
            'LOOP': {'mew': 'n/a', 'sigma': 'n/a'},
            'PAUSE': {'mew': 'n/a', 'sigma': 'n/a'}};
 
-legend = {'FUTURE': {'bg': 'white', 'fg': 'black'},
-           'HALT': {'bg': 'cyan', 'fg': 'black'},
-           'IF': {'bg': 'white', 'fg': 'black'},
-           'MODE': {'bg': 'white', 'fg': 'black'},
-           'CREATE': {'bg': 'white', 'fg': 'black'},
-           'DESTROY': {'bg': 'white', 'fg': 'black'},
-           'SEND': {'bg': 'white', 'fg': 'black'},
+legend = {'FUTURE': {'bg': '#03899C', 'fg': 'black'},
+           'HALT': {'bg': '#FFCB00', 'fg': 'black'},
+           'IF': {'bg': '#2E16B1', 'fg': 'white'},
+           'MODE': {'bg': '#FF7A00', 'fg': 'black'},
+           'CREATE': {'bg': '#604BD8', 'fg': 'black'},
+           'DESTROY': {'bg': '#A68400', 'fg': 'black'},
+           'SEND': {'bg': '#5FC0CE', 'fg': 'black'},
            'RECEIVE': {'bg': 'white', 'fg': 'black'},
-           'SYNC': {'bg': 'white', 'fg': 'black'},
+           'SYNC': {'bg': 'yellowgreen', 'fg': 'black'},
            'HANDLE': {'bg': 'white', 'fg': 'black'},
            'NOP': {'bg': 'white', 'fg': 'black'},
            'SET_COUNTER': {'bg': 'white', 'fg': 'black'},
            'ADD_TO_COUNTER': {'bg': 'white', 'fg': 'black'},
            'SUB_FROM_COUNTER': {'bg': 'white', 'fg': 'black'},
            'LOOP': {'bg': 'black', 'fg': 'white'},
-           'PAUSE': {'bg': 'white', 'fg': 'black'}};
+           'PAUSE': {'bg': 'black', 'fg': 'white'}};
 
 function gaussian_point(x, mew, sigma){
 	var norm = new NormalDistribution(mew,sigma);
@@ -52,7 +52,6 @@ function instr_info(t){
 		$('#dialog').dialog();
 	}
 }
-
 
 function straighten(data, stream, time_now, time_now_mean){
 	var results;
@@ -79,7 +78,6 @@ function straighten(data, stream, time_now, time_now_mean){
 			'fg':legend.PAUSE.fg,
 			'descr': instr_info_html({time_now: time_now, data: tmp, end:time_now+len, len:len}), 
 			'length': len * scale -2/*for the broders*/});
-		results = stream;
 	}
 	if(data == 'LOOP'){
 		stream.push({
@@ -88,7 +86,7 @@ function straighten(data, stream, time_now, time_now_mean){
 			'fg':legend.LOOP.fg,
 			'descr': '', 
 			'length': 50});
-		results = stream;
+		results = [stream];
 	} else {
 		if(data.instr != 'PAUSE'){
 			stream.push({
@@ -104,7 +102,14 @@ function straighten(data, stream, time_now, time_now_mean){
 			results = [];
 			for (var c = 0; c < data.children.length; c++){
 				clone = JSON.parse(JSON.stringify(stream));
-				results.push(straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew)));
+				
+				var res = straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
+				// pass it through if it's one, otherwise 
+				if(res.length == 1){
+					results.push(res);
+				} else {
+					results.push.apply(results, res);
+				}
 			}
 		}
 	}
