@@ -141,17 +141,30 @@ function straighten(data, stream, time_now, time_now_mean){
 }
 
 function render(){
-	streams = straighten(cached_data, [], 0, 0);
-	// calculate the length of the container
-	var maxlen = 0;
-	$('#container').html(Mustache.render($('#template').html(), streams));
-	$('.stream').children().each(function(i, ele){
-		maxlen += $(ele).width();
+	var res = [];
+	for (var vm in cached_data){
+		var data = cached_data[vm];
+		streams = straighten(data, [], 0, 0);
+		res.push({title: vm, data: streams});
+	}
+	$('#container').html(Mustache.render($('#template').html(), res));
+	$('.stream').each(function(i, ele){
+		$this = $(ele);
+		// calculate the length of the container
+		var maxlen = 0;
+		$this.children().each(function(i, ele){
+			maxlen += $(ele).width();
+		});
+		$this.css('width', maxlen + 1);
+		// add tooltips
+		$this.find('.instr').tooltip({
+			html: true
+		});
+		$this.click(function(){
+			instr_info(this);
+		});
 	});
-	$('.stream').css('width', maxlen + 1);
-	$('.stream .instr').tooltip({
-		html: true
-	});
+
 	var leg = [];
 	for(var instr in legend){
 		leg.push({

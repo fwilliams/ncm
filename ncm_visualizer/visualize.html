@@ -117,7 +117,10 @@
 		<div>end: {{end}}</div>
 	</script>
 	<script type="text/template" id="template" style="display:none">
-	{{#.}}<div class="clear stream">{{#.}}<div class="left instr {{{instr.instr}}}" onclick="instr_info(this)" data-title="{{descr}}" title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{{instr.instr}}}</div>{{/.}}</div>{{/.}}
+	{{#.}}
+	<h3 class="clear">{{title}}</h3>
+	{{#data}}<div class="clear stream">{{#.}}<div class="left instr {{{instr.instr}}}" data-title="{{descr}}" title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{{instr.instr}}}</div>{{/.}}</div>{{/data}}
+	{{/.}}
 	</script>
 	<script type="text/template" id="legend-template" style="display:none">
 	<table class="table table-bordered table-striped">
