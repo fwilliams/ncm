@@ -1,8 +1,8 @@
 <html>
 <head>
 	<title>Network Code visualization</title>
-	<link rel="stylesheet" href="jquery-ui-1.10.2.min.css" />
 	<link rel="stylesheet" href="css/bootstrap.min.css" />
+	<link rel="stylesheet" href="css/slider.css" />
 	<style type="text/css">
 	.stream {
 	}
@@ -31,6 +31,9 @@
 	.title {
 		font-weight: bold;
 	}
+	.table {
+		background-color: white;
+	}
 	</style>
 </head>
 <body>
@@ -53,10 +56,23 @@
       	<div class="row-fluid">
 	        <div class="span12">
 				<h2>Percentile</h2>
-				<div><input id="perc" value="0.50"></input></div>
+				<div><input class="span1" type="text" id="perc" value="0.50"></input></div>
 				<div id="percentile"></div>
 				<h2>Zoom Level</h2>
-				<div><input id="zoom" value="0.05"></input> <button id="zoomin">+</button> <button id="zoomout">-</button></div>
+				<div class="input-prepend input-append">
+				  <div class="btn-group">
+				    <button class="btn btn-success" id="zoomin">
+						&nbsp;<span class="icon-plus"></span>
+				    </button>
+				    <span></span><!-- This hack makes the button face the right way-->
+				  </div>
+				  <input class="span5" id="zoom" value="0.2" type="text">
+				  <div class="btn-group">
+				    <button class="btn btn-danger" id="zoomout">
+						<span class="icon-minus"></span>&nbsp;
+				    </button>
+				  </div>
+				</div>
 				<h2>Code flow</h2>
 				<div id="container"></div>
 				<h2 class="clear">Legend</h2>
@@ -73,23 +89,30 @@
 		<div>end: {{end}}</div>
 	</script>
 	<script type="text/template" id="template" style="display:none">
-	{{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{instr.instr}}</div>{{/.}}</div>{{/.}}
+	{{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{instr.instr}}</div>{{/.}}</div>{{/.}}
 	</script>
 	<script type="text/template" id="legend-template" style="display:none">
-	<table>
-	<tr class="title"><td>Instruction</td><td>Mean</td><td>Standard Deviation</td></tr>
+	<table class="table table-bordered table-striped">
+		<tr class="title">
+			<td>Instruction</td>
+			<td>Mean</td>
+			<td>Standard Deviation</td>
+			<td>Value</td>
+		</tr>
 	{{#.}}
 	<tr>
-	<td style="background-color:{{bg}}; color:{{fg}}">{{instr}}</td>
-	<td>{{mean}}</td><td>{{std}}</td>
+		<td style="background-color:{{bg}}; color:{{fg}}">{{instr}}</td>
+		<td>{{mean}}</td>
+		<td>{{std}}</td>
+		<td>{{value}}</td>
 	</tr>
 	{{/.}}
 	</table>
 	</script>
 
 	<script src="js/jquery-1.9.1.js"></script>
-	<script src="js/jquery-ui-1.10.2.min.js"></script>
-	
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/bootstrap-slider.js"></script>
 	<script src="js/jstat-1.0.0.min.js"></script>
 	<script src="js/mustache.js"></script>
 	<script src="js/visualize.js"></script>

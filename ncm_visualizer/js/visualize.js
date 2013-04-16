@@ -48,8 +48,8 @@ function instr_info_html(data){
 function instr_info(t){
 	$this = $(t);
 	if($this.attr('data-title')){
-		$('#dialog').html($this.attr('data-title'));
-		$('#dialog').dialog();
+		// $('#dialog').html($this.attr('data-title'));
+		// $('#dialog').dialog();
 	}
 }
 
@@ -59,6 +59,14 @@ function straighten(data, stream, time_now, time_now_mean){
 	var len;
 	if (data !== 'LOOP' && data.instr != 'PAUSE') {
 		len = gaussian_point(percentile, data.length.mew, data.length.sigma);
+		if(len < 0){
+			return [{
+			'instr': {'instr':"Negative Time"},
+			'bg':'white',
+			'fg':'black',
+			'descr': '',
+			'length': -1}];
+		}
 	}
 	if(data.instr == 'PAUSE'){
 		//contract the length of pauses as we expand the other instructions
@@ -120,21 +128,13 @@ function render(){
 	streams = straighten(cached_data, [], 0, 0);
 	// calculate the length of the container
 	var maxlen = 0;
-	for (var i in streams){
-		var tot = 0;
-		for (var j in streams[i]){
-			tot += streams[i][j].length+2;
-		}
-		maxlen = Math.max(maxlen, tot);
-	}
-	$('#container').css('width', maxlen*1.1);
 	$('#container').html(Mustache.render($('#template').html(), streams));
-	$('#container').tooltip({
-		items: '.instr',
-		// support html tooltips
-		content:function(){
-          return $(this).attr("data-title");
-		}
+	$('.stream').children().each(function(i, ele){
+		maxlen += $(ele).width();
+	});
+	$('.stream').css('width', maxlen + 1);
+	$('.stream .instr').tooltip({
+		html: true
 	});
 	var leg = [];
 	for(var instr in legend){
@@ -143,7 +143,8 @@ function render(){
 			bg: legend[instr].bg,
 			fg: legend[instr].fg,
 			mean: lengths[instr].mew,
-			std: lengths[instr].sigma
+			std: lengths[instr].sigma,
+			value: lengths[instr].mew == 'n/a' ? 'n/a' : gaussian_point(percentile, lengths[instr].mew, lengths[instr].sigma)
 		});
 	}
 	$('#legend').html(Mustache.render($('#legend-template').html(), leg));
@@ -158,7 +159,7 @@ function receive_data(data){
 		if(!isNaN(num) && percentile !== num){
 			percentile = num;
 			hack = true;
-			$('#percentile').slider('value', num);
+			$('#percentile').slider('setValue', num);
 			hack = false;
 			render();
 		}
@@ -167,15 +168,14 @@ function receive_data(data){
 		max: 0.99,
 		min: 0.01,
 		value: 0.5,
-        step: 0.01,
-		change: function(event, ui){
-			if(hack) return;
-			var num = Number(ui.value);
-			if(!isNaN(num && percentile !== num)){
-				percentile = num;
-				$('#perc').val(num);
-				render();
-			}
+        step: 0.01
+    }).on('slide', function(ev){
+		if(hack) return;
+		var num = Number(ev.value);
+		if(!isNaN(num && percentile !== num)){
+			percentile = num;
+			$('#perc').val(num);
+			render();
 		}
 	});
 	$('#zoom').keyup(function(){
