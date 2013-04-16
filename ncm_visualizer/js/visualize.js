@@ -62,7 +62,7 @@ function make_spacer(instrs){
 		len += instr.length;
 	}
 	return [{
-		'instr': {'instr':"&nbsp;"},
+		'instr': {'instr':"&nbsp;", 'class':'noshadow'},
 		'bg':'',
 		'fg':'',
 		'descr':'',
