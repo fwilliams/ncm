@@ -2,15 +2,22 @@
 <head>
 	<title>Network Code visualization</title>
 	<link rel="stylesheet" href="jquery-ui-1.10.2.min.css" />
+	<link rel="stylesheet" href="css/bootstrap.min.css" />
 	<style type="text/css">
 	.stream {
 	}
 	.stream:hover {
 	}
 	.instr {
-		border: 1px solid black;
 		overflow: hidden;
+		padding-top: 10px;
+		padding-bottom: 10px;
 	}
+	body {
+		background-image:url('images/texture.jpg');
+        padding-top: 60px;
+        padding-bottom: 40px;
+      }
 
 	.left {
 		float:left;
@@ -21,46 +28,71 @@
 	a {
 		cursor: pointer;
 	}
-	#legend {
-		margin-top: 30px;
-	}
 	.title {
 		font-weight: bold;
 	}
 	</style>
 </head>
 <body>
-<div id="dialog" style="display:none"></div>
-<div>Percentile: <input id="perc" value="0.50"></input></div>
-<div id="percentile"></div>
-<div>Zoom Level: <input id="zoom" value="0.05"></input> <button id="zoomin">+</button> <button id="zoomout">-</button></div>
-<div id="container"></div>
-<script type="text/template" id="instr-info-template" style="display:none">
-	<div>{{data.instr.instr}}</div>
-	<div>start: {{time_now}}</div>
-	<div>length: {{len}}</div>
-	<div>end: {{end}}</div>
-</script>
-<div id="legend" class="clear"></div>
-<script type="text/template" id="template" style="display:none">
-{{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{instr.instr}}</div>{{/.}}</div>{{/.}}
-</script>
-<script type="text/template" id="legend-template" style="display:none">
-<table>
-<tr class="title"><td>Instruction</td><td>Mean</td><td>Standard Deviation</td></tr>
-{{#.}}
-<tr>
-<td style="background-color:{{bg}}; color:{{fg}}">{{instr}}</td>
-<td>{{mean}}</td><td>{{std}}</td>
-</tr>
-{{/.}}
-</table>
-</script>
-<script src="jquery-1.9.1.js"></script>
-<script src="jquery-ui-1.10.2.min.js"></script>
-<script src="jstat-1.0.0.min.js"></script>
-<script src="mustache.js"></script>
-<script src="visualize.js"></script>
-<script src="data.json"></script>
+
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container-fluid">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="#">NetworkCode Visualizer</a>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container-fluid">
+      	<div class="row-fluid">
+	        <div class="span12">
+				<h2>Percentile</h2>
+				<div><input id="perc" value="0.50"></input></div>
+				<div id="percentile"></div>
+				<h2>Zoom Level</h2>
+				<div><input id="zoom" value="0.05"></input> <button id="zoomin">+</button> <button id="zoomout">-</button></div>
+				<h2>Code flow</h2>
+				<div id="container"></div>
+				<h2 class="clear">Legend</h2>
+				<div id="legend" class="clear"></div>
+			</div>
+		</div>
+	</div>
+
+	<div id="dialog" style="display:none"></div>
+	<script type="text/template" id="instr-info-template" style="display:none">
+		<div>{{data.instr.instr}}</div>
+		<div>start: {{time_now}}</div>
+		<div>length: {{len}}</div>
+		<div>end: {{end}}</div>
+	</script>
+	<script type="text/template" id="template" style="display:none">
+	{{#.}}<div class="clear stream">{{#.}}<div class="left instr {{instr.instr}}" onclick="instr_info(this)" data-title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{instr.instr}}</div>{{/.}}</div>{{/.}}
+	</script>
+	<script type="text/template" id="legend-template" style="display:none">
+	<table>
+	<tr class="title"><td>Instruction</td><td>Mean</td><td>Standard Deviation</td></tr>
+	{{#.}}
+	<tr>
+	<td style="background-color:{{bg}}; color:{{fg}}">{{instr}}</td>
+	<td>{{mean}}</td><td>{{std}}</td>
+	</tr>
+	{{/.}}
+	</table>
+	</script>
+
+	<script src="js/jquery-1.9.1.js"></script>
+	<script src="js/jquery-ui-1.10.2.min.js"></script>
+	
+	<script src="js/jstat-1.0.0.min.js"></script>
+	<script src="js/mustache.js"></script>
+	<script src="js/visualize.js"></script>
+	<script src="data.json"></script>
 </body>
 </html>

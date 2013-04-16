@@ -17,25 +17,25 @@ lengths = {'FUTURE': {'mew': 200, 'sigma': 100},
            'SET_COUNTER': {'mew': 200, 'sigma': 100},
            'ADD_TO_COUNTER': {'mew': 200, 'sigma': 100},
            'SUB_FROM_COUNTER': {'mew': 200, 'sigma': 100},
-           'LOOP': {'mew': 'n/a', 'sigma': 'n/a'},
-           'PAUSE': {'mew': 'n/a', 'sigma': 'n/a'}};
+           'PAUSE': {'mew': 'n/a', 'sigma': 'n/a'},
+           'LOOP': {'mew': 'n/a', 'sigma': 'n/a'}};
 
-legend = {'FUTURE': {'bg': '#03899C', 'fg': 'black'},
-           'HALT': {'bg': '#FFCB00', 'fg': 'black'},
-           'IF': {'bg': '#2E16B1', 'fg': 'white'},
-           'MODE': {'bg': '#FF7A00', 'fg': 'black'},
-           'CREATE': {'bg': '#604BD8', 'fg': 'black'},
-           'DESTROY': {'bg': '#A68400', 'fg': 'black'},
-           'SEND': {'bg': '#5FC0CE', 'fg': 'black'},
-           'RECEIVE': {'bg': 'white', 'fg': 'black'},
-           'SYNC': {'bg': 'yellowgreen', 'fg': 'black'},
-           'HANDLE': {'bg': 'white', 'fg': 'black'},
-           'NOP': {'bg': 'white', 'fg': 'black'},
-           'SET_COUNTER': {'bg': 'white', 'fg': 'black'},
-           'ADD_TO_COUNTER': {'bg': 'white', 'fg': 'black'},
-           'SUB_FROM_COUNTER': {'bg': 'white', 'fg': 'black'},
-           'LOOP': {'bg': 'black', 'fg': 'white'},
-           'PAUSE': {'bg': 'black', 'fg': 'white'}};
+legend = {'FUTURE': {'bg': '#295f99', 'fg': 'white'},
+           'HALT': {'bg': '#ff7f00', 'fg': 'black'},
+           'IF': {'bg': '#ffff00', 'fg': 'black'},
+           'MODE': {'bg': '#7f007f', 'fg': 'black'},
+           'CREATE': {'bg': '#00a833', 'fg': 'black'},
+           'DESTROY': {'bg': '#ff0000', 'fg': 'black'},
+           'SEND': {'bg': '#94afcc', 'fg': 'black'},
+           'RECEIVE': {'bg': '#994b00', 'fg': 'white'},
+           'SYNC': {'bg': '#590b3f', 'fg': 'white'},
+           'HANDLE': {'bg': '#ffff7f', 'fg': 'black'},
+           'NOP': {'bg': '#148366', 'fg': 'black'},
+           'SET_COUNTER': {'bg': '#ff3f00', 'fg': 'black'},
+           'ADD_TO_COUNTER': {'bg': '#7fd319', 'fg': 'black'},
+           'SUB_FROM_COUNTER': {'bg': '#bf003f', 'fg': 'black'},
+           'PAUSE': {'bg': '#196019', 'fg': 'white'},
+           'LOOP': {'bg': '#000000', 'fg': 'white'}};
 
 function gaussian_point(x, mew, sigma){
 	var norm = new NormalDistribution(mew,sigma);
@@ -65,10 +65,10 @@ function straighten(data, stream, time_now, time_now_mean){
 		len = data.length - (time_now - time_now_mean);
 		if(len < 0){
 			return [{
-			'instr': {'instr':"Deadline Missed"}, 
+			'instr': {'instr':"Deadline Missed"},
 			'bg':'white',
 			'fg':'black',
-			'descr': '', 
+			'descr': '',
 			'length': -1}];
 		}
 		var tmp = {'instr': {'instr':'PAUSE'}};
@@ -76,15 +76,15 @@ function straighten(data, stream, time_now, time_now_mean){
 			'instr': {'instr':'PAUSE'},
 			'bg':legend.PAUSE.bg,
 			'fg':legend.PAUSE.fg,
-			'descr': instr_info_html({time_now: time_now, data: tmp, end:time_now+len, len:len}), 
-			'length': len * scale -2/*for the broders*/});
+			'descr': instr_info_html({time_now: time_now, data: tmp, end:time_now+len, len:len}),
+			'length': len * scale });
 	}
 	if(data == 'LOOP'){
 		stream.push({
-			'instr': {'instr':'LOOP'}, 
+			'instr': {'instr':'LOOP'},
 			'bg':legend.LOOP.bg,
 			'fg':legend.LOOP.fg,
-			'descr': '', 
+			'descr': '',
 			'length': 50});
 		results = [stream];
 	} else {
@@ -94,7 +94,7 @@ function straighten(data, stream, time_now, time_now_mean){
 				'bg':legend[data.instr.instr].bg,
 				'fg':legend[data.instr.instr].fg,
 				'descr': instr_info_html({time_now: time_now, data: data, end:time_now+len, len:len}),
-				'length': len * scale -2/*for the broders*/});
+				'length': len * scale });
 		}
 		if(data.children.length == 1){
 			results = straighten(data.children[0], stream, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
@@ -102,7 +102,7 @@ function straighten(data, stream, time_now, time_now_mean){
 			results = [];
 			for (var c = 0; c < data.children.length; c++){
 				clone = JSON.parse(JSON.stringify(stream));
-				
+
 				var res = straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
 				// pass it through if it's one, otherwise 
 				if(res.length == 1){
