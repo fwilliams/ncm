@@ -85,6 +85,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 			}
 			// create new instructions block
 			a->ncm_sysfs->program->instructions = kmalloc(len, GFP_KERNEL);
+			a->ncm_sysfs->program->length = len;
 			// copy the given data into it
 			memcpy(a->ncm_sysfs->program->instructions, buf, len);
 		} else {

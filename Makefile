@@ -1,4 +1,4 @@
-kernel_dir 			:= /usr/src/linux-3.6.11-rt
+kernel_dir 			:= /usr/src/linux-headers-3.6.11-gnu-3-generic
 
 module_name 		:= netcode$(vm)
 

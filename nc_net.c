@@ -44,10 +44,10 @@ void skb_print(struct sk_buff *skb){
 	printk("Size available: %i\n", skb->avail_size);
 	printk("hdr_len: %i\n", skb->hdr_len);
 	printk("Data location: %i\n", skb->data - skb->head);
-	printk("Tail location: %i\n", skb->tail - skb->head);
-	printk("End location: %i\n", skb->end - skb->head);
-	printk("skb_headlen: %i\n", skb_headlen(skb));
-	printk("Calculated data length: %i\n", skb->tail - skb->data);
+	// printk("Tail location: %i\n", skb->tail - skb->head);
+	// printk("End location: %i\n", skb->end - skb->head);
+	// printk("skb_headlen: %i\n", skb_headlen(skb));
+	// printk("Calculated data length: %i\n", skb->tail - skb->data);
 	printk("Total length: %i\n", skb->len);
 	printk("Data length: %i\n", skb->data_len);
 	print_hex_dump(KERN_DEBUG, "data: ", DUMP_PREFIX_NONE, 16, 1, skb->data, skb->len > 100 ? 100 : skb->len, 0);
@@ -362,7 +362,7 @@ int ncm_create_message_from_var(ncm_network_t* ncm_net, ncm_varspace_t* varspace
 	write_lock(&ncm_net->message_space.at[msg_id].lock);
 	*skb = alloc_skb(ETH_FRAME_LEN, GFP_KERNEL);
 	skb_put((*skb), ETH_FRAME_LEN);
-	get_variable_data(varspace, var_id, (*skb)->head + ETH_HLEN, &len);
+	get_variable_data(varspace, var_id, (*skb)->head + ETH_HLEN, (size_t*)&len);
 	len = ETH_HLEN + len;
 	(*skb)->data = (*skb)->head;
 	(*skb)->tail = (*skb)->head + len;
