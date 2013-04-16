@@ -69,24 +69,24 @@
       	<div class="row-fluid">
 	        <div class="span12">
 
-				<h2>Code flow</h2>
-				<div id="container"></div>
-
-				<h2 class="clear">Zoom Level</h2>
+				<div class="clear"></div>
 				<div class="input-prepend input-append">
 				  <div class="btn-group">
-				    <button class="btn btn-success" id="zoomin">
-						&nbsp;<span class="icon-plus"></span>
+				    <button class="btn" id="zoomin">
+						&nbsp;<span class="icon-zoom-in"></span>
 				    </button>
 				    <span></span><!-- This hack makes the button face the right way-->
 				  </div>
 				  <input class="span5" id="zoom" value="0.2" type="text">
 				  <div class="btn-group">
-				    <button class="btn btn-danger" id="zoomout">
-						<span class="icon-minus"></span>&nbsp;
+				    <button class="btn" id="zoomout">
+						<span class="icon-zoom-out"></span>&nbsp;
 				    </button>
 				  </div>
 				</div>
+				
+				<div id="container"></div>
+
 
 				<h2 class="clear">Percentile</h2>
 				<div><input class="span1" style="margin-right: 20px;" type="text" id="perc" value="0.50"></input><div style="width:500px;" id="percentile"></div></div>
