@@ -21,10 +21,11 @@ static ncm_sysfs_t sysfs;
 static int chrdev_major;
 
 static ssize_t varspace_chrdev_read(struct file* filep, char __user* buff, size_t len, loff_t* off) {
-	u8 kbuf[MAX_VAR_SIZE_BYTES];
+	u8 kbuf[MAX_VAR_SIZE_BYTES+1];
 	u32 klen;
 
 	get_variable_data(&ncm_interp.variable_space, 0, kbuf, &klen);
+
 	kbuf[klen] = '\0';
 
 	if(copy_to_user(buff, kbuf, min(len, klen)) != 0) {
