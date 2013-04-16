@@ -116,7 +116,7 @@ function straighten(data, stream, time_now, time_now_mean){
 				var res = straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
 				// pass it through if it's one, otherwise 
 				if(res.length == 1){
-					results.push(res);
+					results.push(res[0]);
 				} else {
 					results.push.apply(results, res);
 				}
