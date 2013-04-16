@@ -48,8 +48,10 @@ function instr_info_html(data){
 function instr_info(t){
 	$this = $(t);
 	if($this.attr('data-title')){
-		// $('#dialog').html($this.attr('data-title'));
-		// $('#dialog').dialog();
+		$('.modal-body').html($this.attr('data-title'));
+		$('.modal').modal({backdrop: false}).draggable({
+			handle: ".modal-header"
+		});
 	}
 }
 
