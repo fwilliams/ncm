@@ -18,6 +18,20 @@ static struct attribute_group attr_group = {
 	.attrs = attrs,
 };
 
+static ssize_t ncm_sysfs_var_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf) {
+	u32 klen, var;
+	sscanf(attr->attr.name, "%i", &var);
+	get_variable_data(&sysfs.ncm_interp->variable_space, var, buf, &klen);
+	return klen;
+}
+
+static ssize_t ncm_sysfs_var_store(struct kobject *kobj, struct kobj_attribute *attr, const char *buf, size_t len) {
+	u32 var;
+	sscanf(attr->attr.name, "%i", &var);
+	set_variable_data(&sysfs.ncm_interp->variable_space, var, (u8*)buf, len);
+	return len;
+}
+
 static ssize_t ncm_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr, char *buf) {
  	u32 channels;
 	if(strcmp(attr->attr.name, "code") == 0){
@@ -161,8 +175,8 @@ int nc_init_sysfs(ncm_interpreter_t *ncm_interp,
 		snprintf(sysfs_var_names[i], ATTR_NAME_LEN, "%i" , i);
 		kattr->attr.name = sysfs_var_names[i];
 		kattr->attr.mode = 0666;
-		kattr->show	= ncm_sysfs_show;
-		kattr->store = ncm_sysfs_store;
+		kattr->show	= ncm_sysfs_var_show;
+		kattr->store = ncm_sysfs_var_store;
 		attrs[i] = &kattr->attr;
 	}
 	attrs[i] = NULL;
@@ -179,6 +193,7 @@ int nc_init_sysfs(ncm_interpreter_t *ncm_interp,
     return err;
 err:
 	kobject_put(sysfs.nc_kobj);
+	sysfs.nc_kobj = NULL;
     return err;
 }
 

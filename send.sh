@@ -1,5 +1,5 @@
 while true
 do
-date > /dev/ncm_varspace
+date > /sys/network_code/varspace/1
 sleep 1
 done
