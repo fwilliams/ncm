@@ -94,6 +94,14 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct attribute *attr,
 		// if you write "run" into the command
 		if(memcmp(buf, "run", 3) == 0){
 			if(!is_running(a->ncm_sysfs->ncm_interp)){
+				if(a->ncm_sysfs->program->instructions == NULL){
+		            printk(KERN_WARNING "Cannot start because no network code program has been loaded.");
+					return len;
+				}
+				if(a->ncm_sysfs->interp_params->network.net_device_name == NULL || a->ncm_sysfs->interp_params->network.channel_mac == NULL){
+		            printk(KERN_WARNING "Cannot start because no network code parameters have been loaded.");
+					return len;
+				}
 				start_interpreter(a->ncm_sysfs->ncm_interp, a->ncm_sysfs->program, a->ncm_sysfs->interp_params);
 			}
 		// if you write "stop" into the command
@@ -145,7 +153,7 @@ int nc_init_sysfs(ncm_sysfs_t *sysfs, ncm_interpreter_t *ncm_interp,
         kobject_init(sysfs->nc_kobj, &sysfs->nc_kobj_type);
         if (kobject_add(sysfs->nc_kobj, NULL, "%s", "network_code")) {
              err = -1;
-             printk("Sysfs creation failed\n");
+             printk(KERN_WARNING "Sysfs creation failed");
              kobject_put(sysfs->nc_kobj);
              sysfs->nc_kobj = NULL;
         } else {

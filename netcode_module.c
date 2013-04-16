@@ -80,7 +80,9 @@ int init_module() {
 
 	sysfs_ret = nc_init_sysfs(&sysfs, &ncm_interp, &program, &interp_params);
 
+#ifndef VM
 	start_interpreter(&ncm_interp, &program, &interp_params);
+#endif
 
 	return sysfs_ret;
 }
