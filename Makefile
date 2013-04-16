@@ -2,7 +2,7 @@ kernel_dir 			:= /usr/src/linux-headers-3.6.11-gnu-3-generic
 
 module_name 		:= netcode$(vm)
 
-varpsace_major_num	:= 250
+varpsace_major_num	:= 249
 
 obj-m				:= $(module_name).o
 $(module_name)-y	:= netcode_helper.o future_queue.o variable_space.o counter.o sysfs.o guards.o nc_net.o interpreter.o netcode_module.o
