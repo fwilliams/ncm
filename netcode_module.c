@@ -24,7 +24,7 @@ static ssize_t varspace_chrdev_read(struct file* filep, char __user* buff, size_
 	u8 kbuf[MAX_VAR_SIZE_BYTES];
 	u32 klen;
 
-	get_variable_data(&ncm_interp.variable_space, 1, kbuf, &klen);
+	get_variable_data(&ncm_interp.variable_space, 0, kbuf, &klen);
 	kbuf[klen] = '\0';
 
 	if(copy_to_user(buff, kbuf, min(len, klen)) != 0) {
@@ -38,20 +38,13 @@ static ssize_t varspace_chrdev_read(struct file* filep, char __user* buff, size_
 
 static ssize_t varspace_chrdev_write(struct file* filp, const char __user* buff, size_t len, loff_t* off) {
 	u8 kbuf[len+1];
-	u32 var_id;
 
 	copy_from_user(kbuf, buff, len);
 
-	if(kbuf[0] == 49) {
-		var_id = 0;
-	} else {
-		var_id = 1;
-	}
-
-	set_variable_data(&ncm_interp.variable_space, var_id, &kbuf[1], len-1);
+	set_variable_data(&ncm_interp.variable_space, 0, &kbuf[0], len);
 
 	kbuf[len] = '\0';
-	debug_print("Wrote %s to variable %d", &kbuf[1], kbuf[0]);
+	debug_print("Wrote %s to variable 0", &kbuf[0]);
 
 	return len;
 }
