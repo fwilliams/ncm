@@ -12,6 +12,16 @@
 		overflow: hidden;
 		padding-top: 10px;
 		padding-bottom: 10px;
+
+		-webkit-box-shadow: 7px 4px 8px rgba(50, 50, 50, 0.35);
+		-moz-box-shadow:    7px 4px 8px rgba(50, 50, 50, 0.35);
+		box-shadow:         7px 4px 8px rgba(50, 50, 50, 0.35);
+	}
+	.noshadow {
+
+		-webkit-box-shadow: none;
+		-moz-box-shadow:    none;
+		box-shadow:         none;
 	}
 	body {
 		background-image:url('images/texture.jpg');
@@ -119,7 +129,7 @@
 	<script type="text/template" id="template" style="display:none">
 	{{#.}}
 	<h3 class="clear">{{title}}</h3>
-	{{#data}}<div class="clear stream">{{#.}}<div class="left instr {{{instr.instr}}}" data-title="{{descr}}" title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{{instr.instr}}}</div>{{/.}}</div>{{/data}}
+	{{#data}}<div class="clear stream">{{#.}}<div class="left instr {{{instr.instr}}} {{instr.class}}" data-title="{{descr}}" title="{{descr}}" style="width:{{length}}px; background-color:{{bg}}; color:{{fg}};">{{{instr.instr}}}</div>{{/.}}</div>{{/data}}
 	{{/.}}
 	</script>
 	<script type="text/template" id="legend-template" style="display:none">
