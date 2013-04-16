@@ -55,6 +55,20 @@ function instr_info(t){
 	}
 }
 
+function make_spacer(instrs){
+	var len = 0;
+	for(var i in instrs){
+		instr = instrs[i];
+		len += instr.length;
+	}
+	return [{
+		'instr': {'instr':"&nbsp;"},
+		'bg':'',
+		'fg':'',
+		'descr':'',
+		'length':len}];
+}
+
 function straighten(data, stream, time_now, time_now_mean){
 	var results;
 	var clone;
@@ -110,10 +124,10 @@ function straighten(data, stream, time_now, time_now_mean){
 			results = straighten(data.children[0], stream, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
 		} else {
 			results = [];
+			var spacer = make_spacer(stream);
 			for (var c = 0; c < data.children.length; c++){
-				clone = JSON.parse(JSON.stringify(stream));
 
-				var res = straighten(data.children[c], clone, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
+				var res = straighten(data.children[c], c === 0 ? stream : spacer, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
 				// pass it through if it's one, otherwise 
 				if(res.length == 1){
 					results.push(res[0]);
