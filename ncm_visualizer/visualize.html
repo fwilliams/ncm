@@ -29,6 +29,9 @@
         padding-bottom: 40px;
       }
 
+    .instr_num {
+    	font-weight: bold;
+    }
 	.left {
 		float:left;
 	}
@@ -121,10 +124,13 @@
 	</div>
 
 	<script type="text/template" id="instr-info-template" style="display:none">
-		<div>{{data.instr.instr}}</div>
+		<div><span class="instr_num">{{instr_num}}</span> {{data.instr.instr}}</div>
 		<div>start: {{time_now}}</div>
 		<div>length: {{len}}</div>
 		<div>end: {{end}}</div>
+		{{#args}}
+		<div>{{name}}: {{value}}</div>
+		{{/args}}
 	</script>
 	<script type="text/template" id="template" style="display:none">
 	{{#.}}

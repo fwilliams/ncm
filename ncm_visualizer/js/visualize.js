@@ -20,6 +20,23 @@ lengths = {'FUTURE': {'mew': 200, 'sigma': 100},
            'PAUSE': {'mew': 'n/a', 'sigma': 'n/a'},
            'LOOP': {'mew': 'n/a', 'sigma': 'n/a'}};
 
+num_arguments = {'FUTURE': 2,
+           'HALT': 0,
+           'IF': 2,
+           'MODE': 1,
+           'CREATE': 2,
+           'DESTROY': 1,
+           'SEND': 2,
+           'RECEIVE': 2,
+           'SYNC': 2,
+           'HANDLE': 0,
+           'NOP': 0,
+           'SET_COUNTER': 1,
+           'ADD_TO_COUNTER': 1,
+           'SUB_FROM_COUNTER': 1,
+           'PAUSE': 0,
+           'LOOP': 0};
+
 legend = {'FUTURE': {'bg': '#295f99', 'fg': 'white'},
            'HALT': {'bg': '#ff7f00', 'fg': 'black'},
            'IF': {'bg': '#ffff00', 'fg': 'black'},
@@ -43,10 +60,14 @@ function gaussian_point(x, mew, sigma){
 }
 
 function instr_info_html(data){
-	return Mustache.render(document.getElementById('instr-info-template').innerHTML, data);
+	var args = num_arguments[data.data.instr.instr];
+	data['args'] = [];
+	for(var i = 0; i < args; i++){
+		data['args'].push({'name': 'arg'+i, 'value': data.data.instr['arg'+i]});
+	}
+	return Mustache.render($('#instr-info-template').html(), data);
 }
 function instr_info($this){
-	console.log($this);
 	if($this.attr('data-title')){
 		$('.modal-body').html($this.attr('data-title'));
 		$('.modal').modal({backdrop: false}).draggable({
@@ -69,7 +90,7 @@ function make_spacer(instrs){
 		'length':len}];
 }
 
-function straighten(data, stream, time_now, time_now_mean){
+function straighten(data, stream, time_now, time_now_mean, instr_num){
 	var results;
 	var clone;
 	var len;
@@ -85,6 +106,7 @@ function straighten(data, stream, time_now, time_now_mean){
 		}
 	}
 	if(data.instr == 'PAUSE'){
+		instr_num -= 1;
 		//contract the length of pauses as we expand the other instructions
 		len = data.length - (time_now - time_now_mean);
 		if(len < 0){
@@ -117,17 +139,17 @@ function straighten(data, stream, time_now, time_now_mean){
 				'instr': data.instr,
 				'bg':legend[data.instr.instr].bg,
 				'fg':legend[data.instr.instr].fg,
-				'descr': instr_info_html({time_now: time_now, data: data, end:time_now+len, len:len}),
+				'descr': instr_info_html({time_now: time_now, data: data, end:time_now+len, len:len, instr_num:instr_num}),
 				'length': len * scale });
 		}
 		if(data.children.length == 1){
-			results = straighten(data.children[0], stream, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
+			results = straighten(data.children[0], stream, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew), instr_num+1);
 		} else {
 			results = [];
 			var spacer = make_spacer(stream);
 			for (var c = 0; c < data.children.length; c++){
 
-				var res = straighten(data.children[c], c === 0 ? stream : spacer, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew));
+				var res = straighten(data.children[c], c === 0 ? stream : spacer, time_now+len, time_now_mean+(data.instr == 'PAUSE' ? data.length : data.length.mew), instr_num+1);
 				// pass it through if it's one, otherwise 
 				if(res.length == 1){
 					results.push(res[0]);
@@ -166,7 +188,7 @@ function render(){
 	var res = [];
 	for (var vm in cached_data){
 		var data = cached_data[vm];
-		streams = straighten(data, [], 0, 0);
+		streams = straighten(data, [], 0, 0, 0);
 		res.push({title: vm, data: streams});
 	}
 	$('#container').html(Mustache.render($('#template').html(), res));
