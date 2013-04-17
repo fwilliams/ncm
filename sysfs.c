@@ -48,14 +48,14 @@ static ssize_t ncm_sysfs_show(struct kobject *kobj, struct kobj_attribute *attr,
 		}
 	} else if(strcmp(attr->attr.name, "params") == 0){
 		channels = sysfs.interp_params->network.channels;
-		memcpy(buf, sysfs.interp_params, offsetof(ncm_net_params_t, net_device_name));
+		memcpy(buf, sysfs.interp_params, sizeof(sysfs.interp_params->network.channels));
 		// copy to the end of the known size part, overwriting all the pointers we don't want to save
 		// note that net_device_name has to be the first pointer in unknown size part
-		memcpy(buf + offsetof(ncm_net_params_t, net_device_name), sysfs.interp_params->network.net_device_name,
+		memcpy(buf + sizeof(sysfs.interp_params->network.channels), sysfs.interp_params->network.net_device_name,
 				channels * IFNAMSIZ);
-		memcpy(buf + offsetof(ncm_net_params_t, net_device_name) + channels * IFNAMSIZ, sysfs.interp_params->network.channel_mac,
+		memcpy(buf + sizeof(sysfs.interp_params->network.channels) + channels * IFNAMSIZ, sysfs.interp_params->network.channel_mac,
 				channels * ETH_ALEN);
-		return offsetof(ncm_net_params_t, net_device_name) + channels * (IFNAMSIZ + ETH_ALEN);
+		return sizeof(sysfs.interp_params->network.channels) + channels * (IFNAMSIZ + ETH_ALEN);
 	} else {
 		return 0;
 	}
@@ -70,7 +70,7 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct kobj_attribute *attr
 		if(!is_running(sysfs.ncm_interp)){
 			// make sure the input is correctly formatted
 			channels = ((ncm_interp_params_t*)buf)->network.channels;
-			if(len == offsetof(ncm_net_params_t, net_device_name) + (IFNAMSIZ+ETH_ALEN) * channels){
+			if(len == sizeof(sysfs.interp_params->network.channels) + (IFNAMSIZ+ETH_ALEN) * channels){
 				network = &sysfs.interp_params->network;
 				// free the old params if there were any
 				if(network->net_device_name != 0){
@@ -80,14 +80,14 @@ static ssize_t ncm_sysfs_store(struct kobject *kobj, struct kobj_attribute *attr
 					kfree(network->channel_mac);
 				}
 				// copy the given data to the new params
-				memcpy(sysfs.interp_params, buf, offsetof(ncm_net_params_t, net_device_name));
+				memcpy(sysfs.interp_params, buf, sizeof(sysfs.interp_params->network.channels));
 
 				// create new params
 				network->net_device_name = kmalloc(IFNAMSIZ * channels, GFP_KERNEL);
 				network->channel_mac = kmalloc(ETH_ALEN * channels, GFP_KERNEL);
 
-				memcpy(network->net_device_name, buf + offsetof(ncm_net_params_t, net_device_name), IFNAMSIZ * channels);
-				memcpy(network->channel_mac, buf + offsetof(ncm_net_params_t, net_device_name) +
+				memcpy(network->net_device_name, buf + sizeof(sysfs.interp_params->network.channels), IFNAMSIZ * channels);
+				memcpy(network->channel_mac, buf + sizeof(sysfs.interp_params->network.channels) +
 						IFNAMSIZ * channels, ETH_ALEN * channels);
 			} else {
 				printk(KERN_WARNING "Invalid params file.");
