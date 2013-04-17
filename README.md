@@ -4,18 +4,39 @@ Network Code Module
 Quick info
 ---
 
-In an ideal world we would 'install' the network code module tool chain: scripts for loading, starting, stopping, etc. but right now the scripts have some paths hardcoded, so they depend on being in their present directories.
+This is a kernel module that implements "network code", a language that allows the description and verification of real time network communication. It uses sysfs for communication with userspace. It currently bypasses the socket abstraction for sending packets and writes directly to the driver. However, it uses raw sockets for receiving packets. We are trying to move to a lower level interface for receiving packets in real time.
+
+Warning: In an ideal world we would 'install' the network code module tool chain: scripts for loading, starting, stopping, etc. but right now the scripts have some paths hardcoded, so they depend on being in their present directories.
 
 Look at example.sh for a typical usage example.
+
+Requirements
+---
+
+For the network code module to compile:
+
+- make
+- rt linux 3.6.11 (assumed to be in `/usr/src/linux-3.6.11-rt` - change it in the makefile if it's somewhere else)
+
+To use the added tools:
+
+- Python 2 or 3
+
+To run the visualization:
+
+- Python 2
+- A modern web browser (works best in Chrome)
 
 Usage
 ---
 
-Look at the directories in /sys/network_code when the module is loaded to get an idea of what it can do.
+`make all install` to compile and load the module.
 
-To run a network code program you must write its contents to `code` and its parameters file to `params`. The parameter file consists of a list of mac addresses and device names that specify which peer this machine should be listening to / sending to and on which device. All packets are broadcast, so the mac is not used for sending, but it is used to filter incoming packets. After writing any commands to the network code module check `dmesg` for errors.
+Look at the directories in `/sys/network_code` when the module is loaded to get an idea of what it can do.
 
-Write `run` or `stop` to `control` to start and stop the network code program after its code and params were written successfully.
+To run a network code program you must write its contents to `/sys/network_code/code` and its parameters file to `/sys/network_code/params`. The parameter file consists of a list of mac addresses and device names that specify which peer this machine should be listening to / sending to and on which device. All packets are broadcast, so the mac is not used for sending, but it is used to filter incoming packets. After writing any commands to the network code module check `dmesg` for errors.
+
+Write `run` or `stop` to `/sys/network_code/control` to start and stop the network code program after its code and params were written successfully.
 
 `load.sh` is a script written to conveniently handle all of translating, loading and starting of a network code program. Take a look at `exmaple.sh` for usage information.
 
@@ -63,3 +84,8 @@ Extra
 Check out `compile_all_params.sh` and `compile_bytecode.sh` in the samples directory for other useful usage examples for converting between formats.
 
 The two network code programs (rx1 and tx1) in the samples directory are a good test of the system. Take a look at using `send.sh` and `receive.sh` to simulate reads and writes to the variable space.
+
+Almost undocumented features
+---
+
+`hax.h` was used to build the module with a preloaded network code program. If you are trying to use it, compile with `make vm=1` and load the module with `make install vm=1`.
