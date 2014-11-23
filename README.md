@@ -1,6 +1,11 @@
 Network Code Module
 ===
 
+Link to paper
+---
+https://uwaterloo.ca/embedded-software-group/sites/ca.embedded-software-group/files/uploads/files/NC-
+TC_0.pdf
+
 Quick info
 ---
 
